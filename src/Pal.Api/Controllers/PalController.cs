@@ -2,6 +2,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using Dapr;
+using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Palprimes.Common;
 
@@ -12,10 +13,12 @@ namespace Pal.Api.Controllers;
 public class PalController : ControllerBase
 {
     private readonly ILogger<PalController> _logger;
+    private readonly DaprClient _daprClient;
 
-    public PalController(ILogger<PalController> logger)
+    public PalController(DaprClient daprClient, ILogger<PalController> logger)
     {
-        _logger = logger;
+        this._daprClient = daprClient ?? throw new ArgumentNullException(nameof(daprClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [Topic("pubsub", "receivenumber")]
@@ -33,13 +36,8 @@ public class PalController : ControllerBase
                 Result = true
             };
 
-            var result = await httpClient.PostAsync(
-                 "http://localhost:3500/v1.0/palprimesapi/receiveresult",
-                 new StringContent(
-                     JsonSerializer.Serialize(response),
-                     Encoding.UTF8, MediaTypeNames.Application.Json)
-            );
-
+            await _daprClient.PublishEventAsync("pubsub", "receiveresult", response);
+            
             _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
         }
         return Ok();
