@@ -1,1 +1,17 @@
 http://localhost:5296/calculation/api/GetCalculations
+
+###
+
+http://localhost:5221/dapr/subscribe -v
+
+###
+
+POST http://localhost:3500/v1.0/pubsub/receivenumber
+
+{
+    "Number": 10
+}
+
+###
+
+dapr publish --publish-app-id palapi --pubsub pubsub --topic receivenumber --data '{"Number": 10}'
