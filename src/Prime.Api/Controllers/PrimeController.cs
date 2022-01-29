@@ -6,16 +6,16 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Palprimes.Common;
 
-namespace Pal.Api.Controllers;
+namespace Prime.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class PalController : ControllerBase
+public class PrimeController : ControllerBase
 {
-    private readonly ILogger<PalController> _logger;
+    private readonly ILogger<PrimeController> _logger;
     private readonly DaprClient _daprClient;
 
-    public PalController(DaprClient daprClient, ILogger<PalController> logger)
+    public PrimeController(DaprClient daprClient, ILogger<PrimeController> logger)
     {
         this._daprClient = daprClient ?? throw new ArgumentNullException(nameof(daprClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -27,18 +27,16 @@ public class PalController : ControllerBase
     {
         _logger.LogInformation($"Received {request.Number}");
 
-        using (var httpClient = new HttpClient())
+        var response = new CalculationResponse
         {
-            var response = new CalculationResponse
-            {
-                Number = request.Number,
-                Result = true
-            };
+            Number = request.Number,
+            Result = false
+        };
 
-            await _daprClient.PublishEventAsync("pubsub", "receivepals", response);
-            
-            _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
-        }
+        await _daprClient.PublishEventAsync("pubsub", "receiveprimes", response);
+
+        _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
+
         return Ok();
     }
 }

@@ -39,15 +39,19 @@ public class CalculationController : ControllerBase
         return Accepted();
     }
 
-    [Topic("pubsub", "receiveresult")]
-    [HttpPost]
-    [Route("receiveresult")]
-    public IActionResult ProcessOrder([FromBody] CalculationResponse response)
+    [Topic("pubsub", "receivepals")]
+    [HttpPost("receivepals")]
+    public IActionResult ReceivePals([FromBody] CalculationResponse response)
     {
-        //Process order placeholder
-        string headers = String.Join(",", _httpContext.HttpContext!.Request.Headers.Select(x => x.Value));
-        _logger.LogInformation($"Headers: {headers}");
-        _logger.LogInformation($"Response with {response.Number} returned result {response.Result}");
+        _logger.LogInformation($"Pals response with {response.Number} returned result {response.Result}");
+        return Ok();
+    }
+
+    [Topic("pubsub", "receiveprimes")]
+    [HttpPost("receiveprimes")]
+    public IActionResult ReceivePrimes([FromBody] CalculationResponse response)
+    {
+        _logger.LogInformation($"Prime response with {response.Number} returned result {response.Result}");
         return Ok();
     }
 }
