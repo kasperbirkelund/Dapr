@@ -1,5 +1,9 @@
+using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
+using Dapr;
 using Microsoft.AspNetCore.Mvc;
+using Palprimes.Common;
 
 namespace Palprimes.Api.Controllers;
 
@@ -14,35 +18,37 @@ public class CalculationController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
-    [Route("api/publish")]
-    public async Task<IActionResult> Puhlish()
+    [HttpGet]
+    [Route("api/GetCalculations")]
+    public async Task<IActionResult> GetCalculations()
     {
-        //const int numberOfItemsToPublish = 1000;
-        //_logger.LogInformation($"Start publish");
+        const int numberOfItemsToPublish = 1000;
+        _logger.LogInformation($"Start publish");
+        var numbers = Enumerable.Range(1, numberOfItemsToPublish);
+        var requests = numbers.Select(x => new CalculationRequest { Number = x });
 
-        //using (var httpClient = new HttpClient())
-        //{
-        //    foreach (var VARIABLE in COLLECTION)
-        //    {
-        //        var result = await httpClient.PostAsync(
-        //            "http://localhost:3500/v1.0/publish/ordertopic",
-        //            new StringContent(
-        //                System.Text.Json.JsonSerializer.Serialize(order), Encoding.UTF8, "application/json")
-        //        );
-        //    }
-
-        //    _logger.LogInformation($"{order.id} published with status {result.StatusCode}!");
-        //}
-
-        //return Ok();
-        throw new NotImplementedException();
+        using (var httpClient = new HttpClient())
+        {
+            foreach (var request in requests)
+            {
+                var result = await httpClient.PostAsync(
+                    "http://localhost:3500/v1.0/pubsub/receivenumber",
+                    new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, MediaTypeNames.Application.Json)
+                );
+                _logger.LogInformation($"{request.Number} is published with status {result.StatusCode}!");
+            }
+        }
+        return Accepted();
     }
 
-    [HttpPost(Name = "consume")]
-    public Task<ActionResult> Publish()
+    [Topic("pubsub", "receiveresult")]
+    [HttpPost]
+    [Route("receiveresult")]
+    public async Task<IActionResult> ProcessOrder([FromBody] CalculationResponse response)
     {
-        _logger.LogInformation("Publish started");
-        throw new NotImplementedException();
+        //Process order placeholder
+
+        _logger.LogInformation($"Response with {response.Number} returned result {response.Result}");
+        return Ok();
     }
 }
