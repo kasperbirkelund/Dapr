@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
@@ -13,9 +14,11 @@ namespace Palprimes.Api.Controllers;
 public class CalculationController : ControllerBase
 {
     private readonly ILogger<CalculationController> _logger;
+    private readonly IHttpContextAccessor _httpContext;
 
-    public CalculationController(ILogger<CalculationController> logger)
+    public CalculationController(IHttpContextAccessor httpContext, ILogger<CalculationController> logger)
     {
+        this._httpContext = httpContext ?? throw new ArgumentNullException(nameof(httpContext));
         _logger = logger;
     }
 
@@ -32,20 +35,7 @@ public class CalculationController : ControllerBase
         var data = new CalculationRequest() { Number = 7 };
         await client.PublishEventAsync("pubsub", "receivenumber", data);
         _logger.LogInformation($"Publish completed");
-        //var account = await client.InvokeMethodAsync<object, CalculationRequest>
-        //    ("palapi", "receivenumber", data, CancellationToken.None);
 
-        //using (var httpClient = new HttpClient())
-        //{
-        //    foreach (var request in requests)
-        //    {
-        //        var result = await httpClient.PostAsync(
-        //            "http://localhost:3500/v1.0/palapi/receivenumber",
-        //            new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, MediaTypeNames.Application.Json)
-        //        );
-        //        _logger.LogInformation($"{request.Number} is published with status {result.StatusCode}!");
-        //    }
-        //}
         return Accepted();
     }
 
@@ -55,7 +45,8 @@ public class CalculationController : ControllerBase
     public IActionResult ProcessOrder([FromBody] CalculationResponse response)
     {
         //Process order placeholder
-
+        string headers = String.Join(",", _httpContext.HttpContext!.Request.Headers.Select(x => x.Value));
+        _logger.LogInformation($"Headers: {headers}");
         _logger.LogInformation($"Response with {response.Number} returned result {response.Result}");
         return Ok();
     }
