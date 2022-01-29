@@ -4,6 +4,6 @@ namespace Palprimes.Common
 {
     public class CalculationRequest
     {
-        public int Number { get; set; }
+        public int Number { get; init; }
     }
 }
