@@ -16,6 +16,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4AA2EF5B-681C-494E-BE6A-581900E21DAD}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		src\test.http = src\test.http
 	EndProjectSection
 EndProject
 Global

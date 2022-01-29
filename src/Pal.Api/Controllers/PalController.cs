@@ -19,8 +19,8 @@ public class PalController : ControllerBase
     }
 
     [Topic("pubsub", "receivenumber")]
-    [HttpPost()]
-    [Route("receivenumber")]
+    [HttpPost]
+    //[Route("receivenumber")]
     public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
         _logger.LogInformation($"Received {request.Number}");
@@ -41,10 +41,7 @@ public class PalController : ControllerBase
             );
 
             _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
-
         }
-
-
         return Ok();
     }
 }
