@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using Dapr;
@@ -33,10 +34,10 @@ public class PalController : ControllerBase
             };
 
             var result = await httpClient.PostAsync(
-                 "http://localhost:3500/v1.0/pubsub/receiveresult",
+                 "http://localhost:3500/v1.0/palprimesapi/receiveresult",
                  new StringContent(
                      JsonSerializer.Serialize(response),
-                     Encoding.UTF8, "application/json")
+                     Encoding.UTF8, MediaTypeNames.Application.Json)
             );
 
             _logger.LogInformation($"Sent response {response.Number}/{response.Result}");

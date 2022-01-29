@@ -32,7 +32,7 @@ public class CalculationController : ControllerBase
             foreach (var request in requests)
             {
                 var result = await httpClient.PostAsync(
-                    "http://localhost:3500/v1.0/pubsub/receivenumber",
+                    "http://localhost:3500/v1.0/palapi/receivenumber",
                     new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, MediaTypeNames.Application.Json)
                 );
                 _logger.LogInformation($"{request.Number} is published with status {result.StatusCode}!");
