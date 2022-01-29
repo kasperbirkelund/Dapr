@@ -22,7 +22,7 @@ public class CalculationController : ControllerBase
     [Route("api/GetCalculations")]
     public async Task<IActionResult> GetCalculations()
     {
-        const int numberOfItemsToPublish = 1000;
+        const int numberOfItemsToPublish = 10;
         _logger.LogInformation($"Start publish");
         var numbers = Enumerable.Range(1, numberOfItemsToPublish);
         var requests = numbers.Select(x => new CalculationRequest { Number = x });
