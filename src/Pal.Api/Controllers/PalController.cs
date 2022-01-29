@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Dapr;
 using Microsoft.AspNetCore.Mvc;
+using Palprimes.Common;
 
 namespace Pal.Api.Controllers;
 
@@ -16,21 +17,30 @@ public class PalController : ControllerBase
         _logger = logger;
     }
 
-    [Topic("receivenumber")]
+    [Topic("pubsub", "receivenumber")]
     [HttpPost()]
     [Route("receivenumber")]
-    public async Task<IActionResult> ReceiveNumber([FromBody] int number)
+    public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
-        _logger.LogInformation($"Received {number}");
+        _logger.LogInformation($"Received {request.Number}");
 
         using (var httpClient = new HttpClient())
         {
+            var response = new CalculationResponse
+            {
+                Number = request.Number,
+                Result = true
+            };
+
             var result = await httpClient.PostAsync(
-                 "http://localhost:3500/v1.0/publish/receiveresult",
-                 new StringContent(JsonSerializer.Serialize(order), Encoding.UTF8, "application/json")
+                 "http://localhost:3500/v1.0/pubsub/receiveresult",
+                 new StringContent(
+                     JsonSerializer.Serialize(response),
+                     Encoding.UTF8, "application/json")
             );
 
-            _logger.LogInformation($"Order with id {order.id} published with status {result.StatusCode}!");
+            _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
+
         }
 
 
