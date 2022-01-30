@@ -23,17 +23,21 @@ public class CalculationController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/GetCalculations")]
-    public async Task<IActionResult> GetCalculations()
-    {
-        const int numberOfItemsToPublish = 10;
-        _logger.LogInformation($"Start publish");
-        var numbers = Enumerable.Range(1, numberOfItemsToPublish);
+    [Route("api/GetCalculations/{top}")]
+    public async Task<IActionResult> GetCalculations(int top)
+    {        
+        _logger.LogInformation($"Start publish {top} numbers.");
+        var numbers = Enumerable.Range(1, top);
         var requests = numbers.Select(x => new CalculationRequest { Number = x });
 
         using var client = new DaprClientBuilder().Build();
-        var data = new CalculationRequest() { Number = 7 };
-        await client.PublishEventAsync("pubsub", "receivenumber", data);
+        var requestTasks = requests.Select( x =>
+        {            
+            return client.PublishEventAsync("pubsub", "receivenumber", x);
+        });
+
+        await Task.WhenAll(requestTasks);
+
         _logger.LogInformation($"Publish completed");
 
         return Accepted();
