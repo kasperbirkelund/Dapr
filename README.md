@@ -11,3 +11,9 @@
 1. Compeating consumers - skalering ("consumer.groups in redis")
 1. Docker-Desktop Kubernetes
 1. Azure Kubernetes
+
+## Docker
+
+Run from src folder.
+
+    docker-compose -f "docker-compose.yml" up -d --build

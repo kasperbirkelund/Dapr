@@ -1,0 +1,76 @@
+# Please refer https://aka.ms/HTTPSinContainer on how to setup an https developer certificate for your ASP .NET Core service.
+
+version: '3.4'
+
+services:
+  palprimesapi:
+    image: palprimesapi
+    build:
+      context: .
+      dockerfile: src/Palprimes.Api/Dockerfile
+    ports:
+      - 5221:5221
+
+  palprimesapi-dapr:
+    image: "daprio/daprd:latest"
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "palprimesapi",
+        "-app-port",
+        "5221"
+      ]
+    depends_on:
+      - palprimesapi
+    network_mode: "service:palprimesapi"
+
+  primeapi:
+    image: primeapi
+    build:
+      context: .
+      dockerfile: src/Prime.Api/Dockerfile
+    ports:
+      - 5225:5225
+
+  primeapi-dapr:
+    image: "daprio/daprd:latest"
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "primeapi",
+        "-app-port",
+        "5225"
+      ]
+    depends_on:
+      - primeapi
+    network_mode: "service:primeapi"
+
+  palapi:
+    image: palapi
+    build:
+      context: .
+      dockerfile: src/Pal.Api/Dockerfile
+    ports:
+      - 5226:5226
+
+  palapi-dapr:
+    image: "daprio/daprd:latest"
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "palapi",
+        "-app-port",
+        "5226"
+      ]
+    depends_on:
+      - palapi
+    network_mode: "service:palapi"
+
+  placement:
+    image: "daprio/dapr"
+    command: [ "./placement", "-port", "50006" ]
+    ports:
+      - "50006:50006"
