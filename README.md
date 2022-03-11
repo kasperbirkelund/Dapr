@@ -4,7 +4,7 @@
     dapr run --app-id palapi --app-port 5221 --dapr-http-port 3510 dotnet run
     dapr run --app-id primespi --app-port 5225 --dapr-http-port 3520 dotnet run
 
-1. Docerize
+DONE 1. Dockerize
 1. Frontend app, med signalR
 1. Implementere algoritmer for Prime og Pal
 1. Fix bug med Prime-api (DONE)
@@ -16,4 +16,4 @@
 
 Run from src folder.
 
-    docker-compose -f "docker-compose.yml" up -d --build
+    docker-compose -f "docker-compose-debug.yml" up -d --build
