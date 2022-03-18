@@ -1,12 +1,10 @@
-using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
+namespace Pal.Api.Controllers;
+
 using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
+using Pal.Api.Services;
 using Palprimes.Common;
-
-namespace Pal.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -14,9 +12,13 @@ public class PalController : ControllerBase
 {
     private readonly ILogger<PalController> _logger;
     private readonly DaprClient _daprClient;
+    private readonly DefaultPalNumberStrategy _strategy;
 
-    public PalController(DaprClient daprClient, ILogger<PalController> logger)
+    private const int decimalBase = 10;
+
+    public PalController(DaprClient daprClient, DefaultPalNumberStrategy strategy, ILogger<PalController> logger)
     {
+        this._strategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
         this._daprClient = daprClient ?? throw new ArgumentNullException(nameof(daprClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -27,18 +29,19 @@ public class PalController : ControllerBase
     {
         _logger.LogInformation($"Received {request.Number}");
 
-        using (var httpClient = new HttpClient())
+        var result = await _strategy.IsPalindromicAsync(request.Number, decimalBase);
+        var response = new CalculationResponse
         {
-            var response = new CalculationResponse
-            {
-                Number = request.Number,
-                Result = true
-            };
+            ClientId = request.ClientId,
+            Number = request.Number,
+            Result = result,
+            Type = CalculationResultType.Pal
+        };
 
-            await _daprClient.PublishEventAsync("pubsub", "receivepals", response);
-            
-            _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
-        }
+        await _daprClient.PublishEventAsync("pubsub", "results", response);
+
+        _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
+
         return Ok();
     }
 }

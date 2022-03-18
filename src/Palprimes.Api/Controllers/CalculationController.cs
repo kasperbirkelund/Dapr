@@ -1,10 +1,10 @@
-using System.Linq;
-using System.Net.Mime;
-using System.Text;
-using System.Text.Json;
 using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Palprimes.Api.Hubs;
+using Palprimes.Api.Model;
+using Palprimes.Api.Services;
 using Palprimes.Common;
 
 namespace Palprimes.Api.Controllers;
@@ -13,27 +13,31 @@ namespace Palprimes.Api.Controllers;
 [Route("[controller]")]
 public class CalculationController : ControllerBase
 {
+    private const string StoreName = "statestore";
+    private readonly NotificationService _notificationService;
     private readonly ILogger<CalculationController> _logger;
-    private readonly IHttpContextAccessor _httpContext;
+    private readonly StateManagementService _stateService;
 
-    public CalculationController(IHttpContextAccessor httpContext, ILogger<CalculationController> logger)
+    public CalculationController(StateManagementService stateService, NotificationService notificationService, ILogger<CalculationController> logger)
     {
-        this._httpContext = httpContext ?? throw new ArgumentNullException(nameof(httpContext));
-        _logger = logger;
+        this._stateService = stateService ?? throw new ArgumentNullException(nameof(stateService));
+        this._notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     [HttpGet]
-    [Route("api/GetCalculations/{top}")]
-    public async Task<IActionResult> GetCalculations(int top)
-    {        
+    [Route("api/GetCalculations/{clientId}/{top}")]
+    public async Task<IActionResult> GetCalculations(string clientId, int top)
+    {
         _logger.LogInformation($"Start publish {top} numbers.");
+
         var numbers = Enumerable.Range(1, top);
-        var requests = numbers.Select(x => new CalculationRequest { Number = x });
+        var requests = numbers.Select(x => new CalculationRequest { Number = x, ClientId = clientId });
 
         using var client = new DaprClientBuilder().Build();
-        var requestTasks = requests.Select( x =>
-        {            
-            return client.PublishEventAsync("pubsub", "receivenumber", x);
+        var requestTasks = requests.Select(request =>
+        {
+            return client.PublishEventAsync("pubsub", "receivenumber", request);
         });
 
         await Task.WhenAll(requestTasks);
@@ -43,19 +47,27 @@ public class CalculationController : ControllerBase
         return Accepted();
     }
 
-    [Topic("pubsub", "receivepals")]
-    [HttpPost("receivepals")]
-    public IActionResult ReceivePals([FromBody] CalculationResponse response)
+    [Topic("pubsub", "results")]
+    [HttpPost("results")]
+    public async Task<IActionResult> ReceiveResults([FromBody] CalculationResponse response)
     {
-        _logger.LogInformation($"Pals response with {response.Number} returned result {response.Result}");
+        _logger.LogInformation($"Received response {response.Type}/{response.Number}/{response.Result}");
+
+        var state = await _stateService.SetStateAsync(response);
+
+        _logger.LogInformation($"State: {response.ClientId}/IsPal:${state.IsPal}/IsPrime:${state.IsPrime}.");
+
+        if (state.IsPal.HasValue && state.IsPrime.HasValue)
+        {
+            _logger.LogInformation($"Response: {response.ClientId}/{response.ClientId}/IsPal:${state.IsPal.Value}/IsPrime:${state.IsPrime.Value}");
+            _notificationService.Notify(response.ClientId, state);
+
+            //We could remove this and start caching and serving results also directly from state store.
+            await _stateService.ResetStateAsync(state);
+        }
+
         return Ok();
     }
 
-    [Topic("pubsub", "receiveprimes")]
-    [HttpPost("receiveprimes")]
-    public IActionResult ReceivePrimes([FromBody] CalculationResponse response)
-    {
-        _logger.LogInformation($"Prime response with {response.Number} returned result {response.Result}");
-        return Ok();
-    }
+
 }
