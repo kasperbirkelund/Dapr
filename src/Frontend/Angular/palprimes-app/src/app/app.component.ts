@@ -6,11 +6,26 @@ import { environment } from 'src/environments/environment';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
 import { Palprime } from './palprime';
+import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
+
+const listFadeAnimation = trigger('listFadeAnimation', [
+  transition('* <=> *', [
+    query(':enter',
+      [style({ opacity: 0 }), stagger('200ms', animate('600ms ease-out', style({ opacity: 1 })))],
+      { optional: true }
+    ),
+    query(':leave',
+      animate('200ms', style({ opacity: 0 })),
+      { optional: true }
+    )
+  ])
+]);
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  animations: [listFadeAnimation]
 })
 export class AppComponent implements OnInit, OnDestroy {
 
@@ -29,6 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
         transport: signalR.HttpTransportType.WebSockets
       })
       .build();
+
   }
 
   ngOnInit(): void {
