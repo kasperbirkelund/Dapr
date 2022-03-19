@@ -1,4 +1,12 @@
-http://localhost:5221/calculation/api/GetCalculations/100
+### Subscribe to notifications
+http://localhost:5221/notifications
+
+###
+http://localhost:5221/notifications/Subscribe/3b0c4bd6-5141-4a14-95bb-c8a094f51ad0
+
+### Send request
+http://localhost:5221/calculation/api/GetCalculations/3b0c4bd6-5141-4a14-95bb-c8a094f51ad0/100
+
 
 ###
 
