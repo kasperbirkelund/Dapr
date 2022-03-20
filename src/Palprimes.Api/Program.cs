@@ -21,6 +21,7 @@ builder.Services.AddCors(options => options.AddPolicy("default", builder =>
     builder.AllowAnyHeader();
 }));
 builder.Services.AddServices();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -40,5 +41,6 @@ app.UseCloudEvents();
 app.MapControllers();
 app.MapHub<NotificationHub>("/notifications");
 app.MapSubscribeHandler();
+app.MapHealthChecks("/probe");
 
 app.Run();

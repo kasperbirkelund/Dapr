@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -17,6 +17,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { FormsModule } from '@angular/forms';
+import { ConfigService } from './config/config.service';
+
+export function appInitializerFactory(env: ConfigService): any {
+  const promise = env.loadConfig()
+    .then((value) => {
+      console.log(`Config loaded: ${value}`);
+    });
+  return () => promise;
+}
 
 @NgModule({
   declarations: [
@@ -25,7 +34,7 @@ import { FormsModule } from '@angular/forms';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    BrowserAnimationsModule,  
+    BrowserAnimationsModule,
     FormsModule,
     MatMenuModule,
     MatButtonModule,
@@ -37,7 +46,14 @@ import { FormsModule } from '@angular/forms';
     MatToolbarModule,
     HttpClientModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INITIALIZER,
+      useFactory: appInitializerFactory,
+      deps: [ConfigService],
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

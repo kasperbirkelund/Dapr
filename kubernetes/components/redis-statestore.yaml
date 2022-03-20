@@ -10,9 +10,11 @@ spec:
   - name: redisHost
     value: redis-master.palprimes.svc.cluster.local:6379
   - name: redisPassword
-    secretKeyRef:
-      name: redis
-      key: redis-password
+    value: gexo1!
+    #Better to handle password using kubernetes secrets. 
+    #secretKeyRef:
+    #  name: redis
+    #  key: redis-password
   # uncomment below for connecting to redis cache instances over TLS (ex - Azure Redis Cache)
   # - name: enableTLS
   #   value: true 

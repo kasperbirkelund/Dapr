@@ -15,24 +15,24 @@
 1. Fix bug med Prime-api (DONE)
 1. Docker-Desktop Kubernetes
 1. Get zipkin to work on Docker
-1. Compeating consumers - skalering ("consumer.groups in redis")
+1. Competing consumers - skalering ("consumer.groups in redis")
 1. Azure Kubernetes
 
-## Docker
+## Run apps on Docker
 
 Run all commands from root folder.
 
 ### Compose up
 
-    docker-compose.exe -f .\docker-compose.debug.yml up -d --build
+    docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml up -d --build
 
 Hit <http://localhost:5220> in your browser to go to angular frontend.
 
 ### Compose down
 
-    docker-compose.exe -f .\docker-compose.debug.yml down
+    docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml down
 
-## Angular app
+## Run Angular app locally
 
 In case you want to run angular frontend outside Docker than start backend in Docker first and run ng serve.
 
@@ -41,6 +41,42 @@ CD to Frontend/Angular/angular-app folder and run the command below.
     ng serve
 
 Hit <http://localhost:4200> in your browser.
+
+## Run apps on Kubernetes
+
+>Before you continue make sure to setup Kubernetes and Dapr on [Kubernetes](#Kubernetes).
+
+### Build & package apps
+
+1. Run docker compose in case you need new build
+
+        docker-compose.exe -f .\docker-compose.yml up -d --build
+
+1. Run below commands to create helm package for each app
+
+        helm package --version "0.0.0-latest" --app-version latest --destination ./dist/helm ./src/Frontend/Angular/angular-app/charts
+        helm package --version "0.0.0-latest" --app-version latest --destination ./dist/helm ./src/Palprimes.Api/Charts
+        helm package --version "0.0.0-latest" --app-version latest --destination ./dist/helm ./src/Pal.Api/Charts
+        helm package --version "0.0.0-latest" --app-version latest --destination ./dist/helm ./src/Prime.Api/Charts
+
+1. Run below commands to deploy all apps
+
+    > In case you want test the output just uncomment ```--dry-run >> ./dist/{appname}.yaml```.
+
+        helm upgrade angularapp -f ./src/Frontend/Angular/angular-app/charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest ./dist/helm/angularapp-0.0.0-latest.tgz # --dry-run >> ./dist/angularapp.yaml
+
+        helm upgrade palprimesapi -f ./src/Palprimes.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palprimesapi-0.0.0-latest.tgz #--dry-run >> dist/palprimesapi.yaml
+
+        helm upgrade primeapi -f ./src/Prime.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/primeapi-0.0.0-latest.tgz #--dry-run >> dist/primeapi.yaml
+
+        helm upgrade palapi -f ./src/Pal.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palapi-0.0.0-latest.tgz #--dry-run >> dist/palapi.yaml
+
+### Uninstall apps
+
+        helm uninstall angularapp --namespace palprimes
+        helm uninstall palprimesapi --namespace palprimes
+        helm uninstall palapi --namespace palprimes
+        helm uninstall primeapi --namespace palprimes
 
 ## Kubernetes
 
@@ -69,6 +105,9 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
 Dashboard can be accessed at: <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=default>
 
 ### Install Dapr
+
+Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-deploy/>
+>Note Dapr has been installed using helm charts.
 
 1. Add dapr helm repo
 
@@ -127,6 +166,28 @@ Dashboard can be accessed at: <http://localhost:8001/api/v1/namespaces/kubernete
         kubectl apply -f ./kubernetes/components/redis-statestore.yaml
         kubectl apply -f ./kubernetes/components/redis-pubsub.yaml
 
+### Deploy and Configure Zipkin
+
+1. Create Zipkin Deployment
+
+        kubectl create deployment zipkin --image openzipkin/zipkin --namespace dapr-system
+
+1. Create a Kubernetes service for the Zipkin pod
+
+        kubectl expose deployment zipkin --type ClusterIP --port 9411 --namespace dapr-system
+
+1. Deploy Dapr config
+
+        kubectl apply -f ./kubernetes/config/tracing.yaml
+
+### Access Zipkin
+
+Expose Zipkin
+
+        kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system
+
+Access zipkin at: <http://localhost:9411>
+
 ### Access Dapr dashboard
 
 1. Expose dashboard
@@ -134,3 +195,5 @@ Dashboard can be accessed at: <http://localhost:8001/api/v1/namespaces/kubernete
         dapr dashboard -k
 
 1. Access dashboard at <http://localhost:8080>
+
+

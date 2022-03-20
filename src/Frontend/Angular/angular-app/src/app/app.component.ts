@@ -2,11 +2,11 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
 import { PalprimesService } from './palprimes.service';
 import { Guid } from 'guid-typescript';
-import { environment } from 'src/environments/environment';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
 import { Palprime } from './palprime';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
+import { ConfigService } from './config/config.service';
 
 const listFadeAnimation = trigger('listFadeAnimation', [
   transition('* <=> *', [
@@ -33,10 +33,10 @@ export class AppComponent implements OnInit, OnDestroy {
   public palprimes: BehaviorSubject<Palprime[]> = new BehaviorSubject<Palprime[]>([]);
 
   private hubConnection: HubConnection;
-  private hubConnectionUri = environment.notificationsUrl;
+  private hubConnectionUri = `${this.configService.config.apiRootUrl}/notifications`;
   private clientId = Guid.create().toString();
 
-  constructor(private service: PalprimesService) {
+  constructor(private service: PalprimesService, private configService: ConfigService) {
     this.hubConnection = new HubConnectionBuilder()
       .configureLogging(signalR.LogLevel.Debug)
       .withUrl(this.hubConnectionUri, {

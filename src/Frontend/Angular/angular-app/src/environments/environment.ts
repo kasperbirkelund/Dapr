@@ -3,9 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false,
-  palprimesServiceUrl: 'http://localhost:5221',
-  notificationsUrl: 'http://localhost:5221/notifications'
+  production: false
 };
 
 /*
