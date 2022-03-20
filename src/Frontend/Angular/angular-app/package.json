@@ -1,5 +1,5 @@
 {
-  "name": "palprimes-app",
+  "name": "angular-app",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",

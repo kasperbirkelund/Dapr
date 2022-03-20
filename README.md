@@ -26,16 +26,111 @@ Run all commands from root folder.
 
     docker-compose.exe -f .\docker-compose.debug.yml up -d --build
 
+Hit <http://localhost:5220> in your browser to go to angular frontend.
+
 ### Compose down
 
     docker-compose.exe -f .\docker-compose.debug.yml down
 
 ## Angular app
 
-> Start backend in Docker first.
+In case you want to run angular frontend outside Docker than start backend in Docker first and run ng serve.
 
-CD to Frontend/Angular/palprimes-app folder and run the command below.
+CD to Frontend/Angular/angular-app folder and run the command below.
 
     ng serve
 
 Hit <http://localhost:4200> in your browser.
+
+## Kubernetes
+
+>Required only the first time.
+
+### Enable Kubernetes on Docker Desktop 
+
+![Kubernetes on Docker Desktop](images/docker-desktop-k8s.png)
+
+### Install Kubernetes Dashboard (optional)
+
+Good in case you want visuals of Kubernetes cluster with some basic administration.
+
+1. Install dashboard
+
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+
+1. Disable auth (only on local machine for convenience)
+
+        kubectl patch deployment kubernetes-dashboard -n kubernetes-dashboard --type 'json' -p '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-skip-login"}]'
+
+1. Access dashboard
+
+        kubectl proxy
+
+Dashboard can be accessed at: <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=default>
+
+### Install Dapr
+
+1. Add dapr helm repo
+
+        helm repo add dapr https://dapr.github.io/helm-charts/
+        helm repo update
+
+1. See which chart versions are available
+    
+        helm search repo dapr --devel --versions
+
+1. Install dapr
+
+        ​helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait
+
+    >Uninstall dapr by running ```helm uninstall dapr --namespace dapr-system``` 
+
+1. Verify dapr installation
+
+        kubectl get pods --namespace dapr-system
+
+        NAME                                    READY   STATUS    RESTARTS   AGE
+        dapr-dashboard-8664d5c45f-4nxpw         1/1     Running   0          2m19s
+        dapr-operator-58b9d5fd59-x44mr          1/1     Running   0          2m19s
+        dapr-placement-server-0                 1/1     Running   0          2m19s
+        dapr-sentry-858fddc4f7-9hp2w            1/1     Running   0          2m19s
+        dapr-sidecar-injector-7497b7945-b9g5g   1/1     Running   0          2m19s
+
+### Install Redis & Configure pubsub and statestore
+
+1. Add bitnami repo 
+
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo update
+
+1. Create palprimes namespace
+
+        kubectl create namespace palprimes
+
+1. Install Redis
+
+        helm install redis bitnami/redis --namespace palprimes --set auth.password=gexo1!
+
+1. Verify Redis installation
+
+        kubectl get pods --namespace palprimes
+
+        NAME               READY   STATUS    RESTARTS   AGE
+        redis-master-0     1/1     Running   0          64s
+        redis-replicas-0   1/1     Running   0          64s
+        redis-replicas-1   0/1     Running   0          22s
+
+    >Uninstall Redis by running ```helm uninstall redis --namespace palprimes```
+
+1. Configure pubsub and statestore
+
+        kubectl apply -f ./kubernetes/components/redis-statestore.yaml
+        kubectl apply -f ./kubernetes/components/redis-pubsub.yaml
+
+### Access Dapr dashboard
+
+1. Expose dashboard
+
+        dapr dashboard -k
+
+1. Access dashboard at <http://localhost:8080>

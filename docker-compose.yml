@@ -3,6 +3,18 @@
 version: '3.4'
 
 services:
+  angularapp:
+    image:  angularapp
+    build:
+      context: src/Frontend/Angular/angular-app
+      dockerfile: Dockerfile
+    ports:
+      - 5220:80
+    depends_on:
+      - palprimesapi
+      - primeapi
+      - palapi
+
   palprimesapi:
     image: palprimesapi
     build:
@@ -19,8 +31,14 @@ services:
         "-app-id",
         "palprimesapi",
         "-app-port",
-        "5221"
+        "5221",
+        "-components-path", "/components",
+        "-config", "/config/config.yaml",
+        "-placement-host-address", "placement:50006"
       ]
+    volumes:
+      - "./dapr/components/:/components"
+      - "./dapr/config/:/config"
     depends_on:
       - palprimesapi
     network_mode: "service:palprimesapi"
@@ -41,8 +59,14 @@ services:
         "-app-id",
         "primeapi",
         "-app-port",
-        "5225"
+        "5225",
+        "-components-path", "/components",
+        "-config", "/config/config.yaml",
+        "-placement-host-address", "placement:50006"
       ]
+    volumes:
+      - "./dapr/components/:/components"
+      - "./dapr/config/:/config"
     depends_on:
       - primeapi
     network_mode: "service:primeapi"
@@ -63,8 +87,15 @@ services:
         "-app-id",
         "palapi",
         "-app-port",
-        "5226"
+        "5226",
+        "-components-path", "/components",  
+        "-config", "/config/config.yaml",      
+        "-placement-host-address",
+        "placement:50006"
       ]
+    volumes:
+      - "./dapr/components/:/components"
+      - "./dapr/config/:/config"
     depends_on:
       - palapi
     network_mode: "service:palapi"
