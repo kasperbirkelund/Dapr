@@ -86,6 +86,13 @@ Hit <http://localhost:4200> in your browser.
 
 ![Kubernetes on Docker Desktop](images/docker-desktop-k8s.png)
 
+### Install Kubernetes Metrics Server
+
+Metrics yaml fetched from <https://github.com/kubernetes-sigs/metrics-server/releases>
+Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
+
+        kubectl apply -f .\kubernetes\metrics\components.yaml
+
 ### Install Kubernetes Dashboard (optional)
 
 Good in case you want visuals of Kubernetes cluster with some basic administration.
