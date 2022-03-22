@@ -20,8 +20,10 @@ builder.Services.AddCors(options => options.AddPolicy("default", builder =>
     builder.AllowAnyMethod();
     builder.AllowAnyHeader();
 }));
+builder.Services.AddSignalR();
 builder.Services.AddServices();
 builder.Services.AddHealthChecks();
+
 
 var app = builder.Build();
 
