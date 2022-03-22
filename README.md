@@ -120,7 +120,7 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
 1. Install dapr
 
-        ​helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait
+        helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait
 
     >Uninstall dapr by running ```helm uninstall dapr --namespace dapr-system``` 
 
