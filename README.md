@@ -13,8 +13,9 @@
     1. Angular (DONE)
 1. Implementere algoritmer for Prime og Pal (DONE)
 1. Fix bug med Prime-api (DONE)
-1. Docker-Desktop Kubernetes
-1. Get zipkin to work on Docker
+1. Docker-Desktop Kubernetes (DONE)
+        1. Add SignalR back plane.
+1. Get zipkin to work on Docker and Kubernetes
 1. Competing consumers - skalering ("consumer.groups in redis")
 1. Azure Kubernetes
 
@@ -89,6 +90,7 @@ Hit <http://localhost:4200> in your browser.
 ### Install Kubernetes Metrics Server
 
 Metrics yaml fetched from <https://github.com/kubernetes-sigs/metrics-server/releases>
+
 Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
 
         kubectl apply -f .\kubernetes\metrics\components.yaml
