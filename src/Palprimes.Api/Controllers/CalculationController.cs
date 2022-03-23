@@ -37,7 +37,7 @@ public class CalculationController : ControllerBase
         using var client = new DaprClientBuilder().Build();
         var requestTasks = requests.Select(request =>
         {
-            return client.PublishEventAsync("pubsub", "receivenumber", request);
+            return client.PublishEventAsync(DaprConstants.KafkaPubSub, DaprConstants.PubSubTopics.ReceiveNumber, request);
         });
 
         await Task.WhenAll(requestTasks);
@@ -47,8 +47,8 @@ public class CalculationController : ControllerBase
         return Accepted();
     }
 
-    [Topic("pubsub", "results")]
-    [HttpPost("results")]
+    [Topic(DaprConstants.KafkaPubSub, DaprConstants.PubSubTopics.Results)]
+    [HttpPost(DaprConstants.PubSubTopics.Results)]
     public async Task<IActionResult> ReceiveResults([FromBody] CalculationResponse response)
     {
         _logger.LogInformation($"Received response {response.Type}/{response.Number}/{response.Result}");

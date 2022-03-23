@@ -23,26 +23,6 @@ services:
     ports:
       - 5221:5221
 
-  palprimesapi-dapr:
-    image: "daprio/daprd:latest"
-    command:
-      [
-        "./daprd",
-        "-app-id",
-        "palprimesapi",
-        "-app-port",
-        "5221",
-        "-components-path", "/components",
-        "-config", "/config/config.yaml",
-        "-placement-host-address", "placement:50006"
-      ]
-    volumes:
-      - "./dapr/components/:/components"
-      - "./dapr/config/:/config"
-    depends_on:
-      - palprimesapi
-    network_mode: "service:palprimesapi"
-
   primeapi:
     image: primeapi
     build:
@@ -51,26 +31,6 @@ services:
     ports:
       - 5225:5225
 
-  primeapi-dapr:
-    image: "daprio/daprd:latest"
-    command:
-      [
-        "./daprd",
-        "-app-id",
-        "primeapi",
-        "-app-port",
-        "5225",
-        "-components-path", "/components",
-        "-config", "/config/config.yaml",
-        "-placement-host-address", "placement:50006"
-      ]
-    volumes:
-      - "./dapr/components/:/components"
-      - "./dapr/config/:/config"
-    depends_on:
-      - primeapi
-    network_mode: "service:primeapi"
-
   palapi:
     image: palapi
     build:
@@ -78,30 +38,3 @@ services:
       dockerfile: src/Pal.Api/Dockerfile
     ports:
       - 5226:5226
-
-  palapi-dapr:
-    image: "daprio/daprd:latest"
-    command:
-      [
-        "./daprd",
-        "-app-id",
-        "palapi",
-        "-app-port",
-        "5226",
-        "-components-path", "/components",  
-        "-config", "/config/config.yaml",      
-        "-placement-host-address",
-        "placement:50006"
-      ]
-    volumes:
-      - "./dapr/components/:/components"
-      - "./dapr/config/:/config"
-    depends_on:
-      - palapi
-    network_mode: "service:palapi"
-
-  placement:
-    image: "daprio/dapr"
-    command: [ "./placement", "-port", "50006" ]
-    ports:
-      - "50006:50006"

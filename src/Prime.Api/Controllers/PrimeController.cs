@@ -21,7 +21,7 @@ public class PrimeController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    [Topic("pubsub", "receivenumber")]
+    [Topic(DaprConstants.KafkaPubSub, DaprConstants.PubSubTopics.ReceiveNumber)]
     [HttpPost]
     public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
@@ -36,7 +36,7 @@ public class PrimeController : ControllerBase
             Type = CalculationResultType.Prime
         };
 
-        await _daprClient.PublishEventAsync("pubsub", "results", response);
+        await _daprClient.PublishEventAsync(DaprConstants.KafkaPubSub, DaprConstants.PubSubTopics.Results, response);
 
         _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
 
