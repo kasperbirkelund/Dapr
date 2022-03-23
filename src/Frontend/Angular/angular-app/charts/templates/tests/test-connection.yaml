@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "angularapp.fullname" . }}-test-connection"
+  labels:
+    {{- include "angularapp.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "angularapp.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

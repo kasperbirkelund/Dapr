@@ -11,6 +11,7 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<DefaultPrimeNumberStrategy>();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -24,5 +25,6 @@ if (app.Environment.IsDevelopment())
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
+app.MapHealthChecks("/probe");
 
 app.Run();

@@ -1,0 +1,3 @@
+{    
+    "apiRootUrl": "${RESOURCES_API_ROOT_URL}"
+}

@@ -13,6 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDaprClient();
 builder.Services.AddScoped<DefaultPalNumberStrategy>();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -30,5 +31,6 @@ app.UseAuthorization();
 app.UseCloudEvents();
 app.MapControllers();
 app.MapSubscribeHandler();
+app.MapHealthChecks("/probe");
 
 app.Run();
