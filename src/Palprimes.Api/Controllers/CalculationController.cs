@@ -37,7 +37,10 @@ public class CalculationController : ControllerBase
         using var client = new DaprClientBuilder().Build();
         var requestTasks = requests.Select(request =>
         {
-            return client.PublishEventAsync("pubsub", "receivenumber", request);
+            return client.PublishEventAsync(DaprDomain.KafkaPubSub, 
+                DaprDomain.PubSubTopics.ReceiveNumber, 
+                request, 
+                DaprDomain.EventMetadata.PartitionKeyMetadata(request.Number));
         });
 
         await Task.WhenAll(requestTasks);
@@ -47,8 +50,8 @@ public class CalculationController : ControllerBase
         return Accepted();
     }
 
-    [Topic("pubsub", "results")]
-    [HttpPost("results")]
+    [Topic(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.Results)]
+    [HttpPost(DaprDomain.PubSubTopics.Results)]
     public async Task<IActionResult> ReceiveResults([FromBody] CalculationResponse response)
     {
         _logger.LogInformation($"Received response {response.Type}/{response.Number}/{response.Result}");
@@ -57,7 +60,7 @@ public class CalculationController : ControllerBase
 
         _logger.LogInformation($"State: {response.ClientId}/IsPal:${state.IsPal}/IsPrime:${state.IsPrime}.");
 
-        if (state.IsPal.HasValue && state.IsPrime.HasValue)
+        if (state.IsPal.HasValue && state.IsPrime.HasValue && state.IsPal.Value && state.IsPrime.Value)
         {
             _logger.LogInformation($"Response: {response.ClientId}/{response.ClientId}/IsPal:${state.IsPal.Value}/IsPrime:${state.IsPrime.Value}");
             _notificationService.Notify(response.ClientId, state);

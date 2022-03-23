@@ -23,7 +23,7 @@ public class PalController : ControllerBase
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    [Topic("pubsub", "receivenumber")]
+    [Topic(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.ReceiveNumber)]
     [HttpPost]
     public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
@@ -38,7 +38,8 @@ public class PalController : ControllerBase
             Type = CalculationResultType.Pal
         };
 
-        await _daprClient.PublishEventAsync("pubsub", "results", response);
+        await _daprClient.PublishEventAsync(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.Results, response,
+            DaprDomain.EventMetadata.PartitionKeyMetadata(response.Number));
 
         _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
 

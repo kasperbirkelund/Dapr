@@ -59,9 +59,10 @@ ingress:
         - api.palprimes.local
       secretName: palprimesapi-tls
      
-#secrets: 
-#  ConnectionStrings:
-#    DefaultConnection: "User ID=postgres;Password=postgres;Host=postgresql.postgresql.svc.cluster.local;Port=5432;Database=palprimes;Pooling=true"
+secrets: 
+  Settings: 
+    RedisHost: redis-master.palprimes.svc.cluster.local
+    RedisPassword: gexo1!    
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -77,7 +78,7 @@ resources: {}
 
 autoscaling:
   enabled: true
-  minReplicas: 2
+  minReplicas: 1
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80

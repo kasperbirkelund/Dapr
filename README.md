@@ -205,4 +205,76 @@ Access zipkin at: <http://localhost:9411>
 
 1. Access dashboard at <http://localhost:8080>
 
+## Kafka
 
+Using Confluent image inspired by this article: <https://developer.confluent.io/quickstart/kafka-docker/>
+
+### Install on Docker
+
+1. Run docker compose up
+
+        docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml up -d
+
+### Test on Docker
+
+Create test topic
+
+        docker exec broker kafka-topics --bootstrap-server broker:9092 --create --topic quickstart
+
+Write messages to the topic
+
+        docker exec --interactive --tty broker kafka-console-producer --bootstrap-server broker:9092 --topic quickstart
+
+ >Write some text in the terminal window (such as `Hello`) and hit Enter. 
+
+Start new terminal window and execute command below to read messages from the topic
+
+        docker exec --interactive --tty broker kafka-console-consumer --bootstrap-server broker:9092 --topic quickstart --from-beginning
+
+> Now you can produce messages in one terminal window and see them consumed in another.
+
+> Delete topic by running `docker exec broker kafka-topics --bootstrap-server broker:9092 --delete --topic quickstart`
+
+### Install on Kubernetes
+
+Describes installing Kafka using Strimzi operator. 
+The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
+
+Create Kubernetes namespace.
+
+        kubectl create namespace kafka
+
+Install strimzi Custom Resource Definition (CRD).
+
+        kubectl create -f 'https://strimzi.io/install/latest?namespace=palprimes' -n palprimes
+
+Provision the Apache Kafka cluster
+
+        kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-persistent-single.yaml -n palprimes
+
+Wait while Kubernetes starts the required pods, services and so on:
+
+        kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n palprimes 
+
+Create topics
+
+        kubectl create -f ./kubernetes/topics/receivenumber-topic.yaml
+        kubectl create -f ./kubernetes/topics/results-topic.yaml
+
+ >Delete topic by running `kubectl delete -f ./kubernetes/topics/receivenumber-topic.yaml`
+
+### Test on Kubernetes
+
+Run below command to start producing messages
+
+        kubectl -n palprimes run kafka-producer -ti --image=quay.io/strimzi/kafka:0.28.0-kafka-3.1.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic quickstart
+
+Run below command in new terminal window to start consuming messages
+
+        kubectl -n palprimes run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.28.0-kafka-3.1.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server  my-cluster-kafka-bootstrap:9092 --topic quickstart --from-beginning
+
+### Install Dapr kafka-pubsub component
+
+Run command below.
+
+        kubectl apply -f ./kubernetes/components/kafka-pubsub.yaml
