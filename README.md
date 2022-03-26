@@ -25,7 +25,7 @@ Run all commands from root folder.
 
 ### Compose up
 
-    docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml up -d --build
+    docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml up --build -d
 
 Hit <http://localhost:5220> in your browser to go to angular frontend.
 
@@ -62,7 +62,7 @@ Hit <http://localhost:4200> in your browser.
 
 1. Run below commands to deploy all apps
 
-    > In case you want test the output just uncomment ```--dry-run >> ./dist/{appname}.yaml```.
+    > In case you want to test the output just uncomment ```--dry-run >> ./dist/{appname}.yaml```.
 
         helm upgrade angularapp -f ./src/Frontend/Angular/angular-app/charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest ./dist/helm/angularapp-0.0.0-latest.tgz # --dry-run >> ./dist/angularapp.yaml
 
@@ -86,6 +86,36 @@ Hit <http://localhost:4200> in your browser.
 ### Enable Kubernetes on Docker Desktop 
 
 ![Kubernetes on Docker Desktop](images/docker-desktop-k8s.png)
+
+### Install Ingress Controller (Nginx)
+
+Add repo
+
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+Create namespace 
+
+        kubectl create namespace ingress-nginx
+        kubectl label namespace ingress-nginx cert-manager.io/disable-validation=true    
+
+Install Nginx Ingress
+
+        helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+
+### Install Cert-Manager
+
+Add repo
+        
+        helm repo add jetstack https://charts.jetstack.io
+
+Install Cert-Manager
+
+        helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1 --set installCRDs=true
+
+Install lets' encrypt
+
+    kubectl apply -f ./kubernetes/letsencrypt/letsencrypt-staging-clusterissuer.yaml -n cert-manager
+    kubectl describe clusterissuer letsencrypt-staging -n cert-manager
 
 ### Install Kubernetes Metrics Server
 
@@ -240,9 +270,9 @@ Start new terminal window and execute command below to read messages from the to
 Describes installing Kafka using Strimzi operator. 
 The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
 
-Create Kubernetes namespace.
+If not already created, create Palprimes namespace.
 
-        kubectl create namespace kafka
+        kubectl create namespace palprimes
 
 Install strimzi Custom Resource Definition (CRD).
 

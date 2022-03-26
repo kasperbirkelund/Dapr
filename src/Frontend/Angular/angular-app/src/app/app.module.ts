@@ -15,6 +15,7 @@ import { MatGridListModule } from '@angular/material/grid-list';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { FormsModule } from '@angular/forms';
 import { ConfigService } from './config/config.service';
@@ -44,6 +45,7 @@ export function appInitializerFactory(env: ConfigService): any {
     MatDividerModule,
     MatIconModule,
     MatToolbarModule,
+    MatProgressBarModule,
     HttpClientModule
   ],
   providers: [
