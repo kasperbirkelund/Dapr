@@ -7,15 +7,12 @@ using Palprimes.Api.Services;
 public class NotificationHub : Hub
 {
     private readonly IHubContext<NotificationHub> _hubContext;
-    private readonly NotificationService _notificationService;
     private readonly ILogger<NotificationHub> _logger;
-
     private string ConnectionId => Context.ConnectionId;
 
-    public NotificationHub(IHubContext<NotificationHub> hubContext, NotificationService notificationService, ILogger<NotificationHub> logger)
+    public NotificationHub(IHubContext<NotificationHub> hubContext, ILogger<NotificationHub> logger)
     {
         this._hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
-        this._notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -23,12 +20,7 @@ public class NotificationHub : Hub
     {
         _logger.LogInformation($"Subscribing to {clientId}");
 
-        await Groups.AddToGroupAsync(ConnectionId, clientId);
-
-        _notificationService.Subscribe(clientId, async result =>
-        {
-            await _hubContext.Clients.Groups(clientId).SendAsync("result", result);
-        });
+        await Groups.AddToGroupAsync(ConnectionId, clientId);        
 
         return new NoContentResult();
     }
@@ -37,9 +29,7 @@ public class NotificationHub : Hub
     {
         _logger.LogInformation($"Unsubscribing from {clientId}");
 
-        await Groups.RemoveFromGroupAsync(ConnectionId, clientId);
-        
-        _notificationService.Unsubscribe(clientId);
+        await Groups.RemoveFromGroupAsync(ConnectionId, clientId);        
         
         return new NoContentResult();
     }

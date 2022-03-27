@@ -7,6 +7,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Palprime } from './palprime';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { ConfigService } from './config/config.service';
+import { ReturnStatement } from '@angular/compiler';
 
 const listFadeAnimation = trigger('listFadeAnimation', [
   transition('* <=> *', [
@@ -30,6 +31,10 @@ const listFadeAnimation = trigger('listFadeAnimation', [
 export class AppComponent implements OnInit, OnDestroy {
 
   public range: number = 10;
+
+  public progressValue: number = 0;
+  public progressIncrement: number = 0;
+
   public palprimes: BehaviorSubject<Palprime[]> = new BehaviorSubject<Palprime[]>([]);
 
   private hubConnection: HubConnection;
@@ -50,12 +55,15 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.hubConnection.on("result", (palprime: Palprime) => {
       console.log(palprime);
+      this.progressValue = this.progressValue + this.progressIncrement;
+      this.range = this.range - 1;
       if (palprime.isPal && palprime.isPrime) {
         const current = this.palprimes.value;
         const updated = [...current, palprime];
         updated.sort((n1, n2) => n1.number - n2.number);
         this.palprimes.next(updated);
       }
+      if (this.range == 0) this.progressValue = 0;
     });
 
     this.hubConnection.start()
@@ -67,11 +75,16 @@ export class AppComponent implements OnInit, OnDestroy {
         console.log('Error while establishing connection :(')
         console.error(err);
       });
-
   }
 
   load(): void {
+    if (this.range === 0) {
+      alert('Enter value greater than 0.');
+      return;
+    }
     this.palprimes.next([]);
+    this.progressIncrement = 100 / this.range;
+    this.progressValue = 0;
 
     this.service.get(this.clientId, this.range)
       .subscribe({

@@ -3,7 +3,6 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Palprimes.Api.Hubs;
-using Palprimes.Api.Model;
 using Palprimes.Api.Services;
 using Palprimes.Common;
 
@@ -14,14 +13,17 @@ namespace Palprimes.Api.Controllers;
 public class CalculationController : ControllerBase
 {
     private const string StoreName = "statestore";
-    private readonly NotificationService _notificationService;
+    private readonly IHubContext<NotificationHub> _hubContext;
     private readonly ILogger<CalculationController> _logger;
     private readonly StateManagementService _stateService;
 
-    public CalculationController(StateManagementService stateService, NotificationService notificationService, ILogger<CalculationController> logger)
+    public CalculationController(
+        StateManagementService stateService, 
+        IHubContext<NotificationHub> hubContext,
+        ILogger<CalculationController> logger)
     {
         this._stateService = stateService ?? throw new ArgumentNullException(nameof(stateService));
-        this._notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        this._hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -37,7 +39,10 @@ public class CalculationController : ControllerBase
         using var client = new DaprClientBuilder().Build();
         var requestTasks = requests.Select(request =>
         {
-            return client.PublishEventAsync("pubsub", "receivenumber", request);
+            return client.PublishEventAsync(DaprDomain.KafkaPubSub, 
+                DaprDomain.PubSubTopics.ReceiveNumber, 
+                request, 
+                DaprDomain.EventMetadata.PartitionKeyMetadata(request.Number));
         });
 
         await Task.WhenAll(requestTasks);
@@ -47,8 +52,8 @@ public class CalculationController : ControllerBase
         return Accepted();
     }
 
-    [Topic("pubsub", "results")]
-    [HttpPost("results")]
+    [Topic(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.Results)]
+    [HttpPost(DaprDomain.PubSubTopics.Results)]
     public async Task<IActionResult> ReceiveResults([FromBody] CalculationResponse response)
     {
         _logger.LogInformation($"Received response {response.Type}/{response.Number}/{response.Result}");
@@ -59,9 +64,9 @@ public class CalculationController : ControllerBase
 
         if (state.IsPal.HasValue && state.IsPrime.HasValue)
         {
-            _logger.LogInformation($"Response: {response.ClientId}/{response.ClientId}/IsPal:${state.IsPal.Value}/IsPrime:${state.IsPrime.Value}");
-            _notificationService.Notify(response.ClientId, state);
-
+            _logger.LogInformation($"Response: {response.ClientId}/{response.ClientId}/IsPal:${state.IsPal.Value}/IsPrime:${state.IsPrime.Value}");            
+            await _hubContext.Clients.Groups(response.ClientId).SendAsync("result", state);
+            
             //We could remove this and start caching and serving results also directly from state store.
             await _stateService.ResetStateAsync(state);
         }
