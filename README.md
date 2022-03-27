@@ -87,45 +87,7 @@ Hit <http://localhost:4200> in your browser.
 
 ![Kubernetes on Docker Desktop](images/docker-desktop-k8s.png)
 
-### Install Ingress Controller (Nginx)
-
-Add repo
-
-        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-
-Create namespace 
-
-        kubectl create namespace ingress-nginx
-        kubectl label namespace ingress-nginx cert-manager.io/disable-validation=true    
-
-Install Nginx Ingress
-
-        helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
-
-### Install Cert-Manager
-
-Add repo
-        
-        helm repo add jetstack https://charts.jetstack.io
-
-Install Cert-Manager
-
-        helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1 --set installCRDs=true
-
-Install lets' encrypt
-
-    kubectl apply -f ./kubernetes/letsencrypt/letsencrypt-staging-clusterissuer.yaml -n cert-manager
-    kubectl describe clusterissuer letsencrypt-staging -n cert-manager
-
-### Install Kubernetes Metrics Server
-
-Metrics yaml fetched from <https://github.com/kubernetes-sigs/metrics-server/releases>
-
-Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
-
-        kubectl apply -f .\kubernetes\metrics\components.yaml
-
-### Install Kubernetes Dashboard (optional)
+### Install Kubernetes Dashboard
 
 Good in case you want visuals of Kubernetes cluster with some basic administration.
 
@@ -133,15 +95,77 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
 
         kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
 
-1. Disable auth (only on local machine for convenience)
+1. Create admin user and role
 
-        kubectl patch deployment kubernetes-dashboard -n kubernetes-dashboard --type 'json' -p '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--enable-skip-login"}]'
+        kubectl apply -f .\kubernetes\dashboard\admin-user.yaml
+        kubectl apply -f .\kubernetes\dashboard\cluster-rolebinding.yaml
 
-1. Access dashboard
+1. Get token for login
+
+        kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+
+1. Copy the token to use it with Dashboard login.
+        
+1. Run command below
 
         kubectl proxy
 
-Dashboard can be accessed at: <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=default>
+1. Access dashboard at <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/> after running 
+
+### Install Ingress Controller (Nginx)
+
+1. Add repo
+
+        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+1. Create namespace 
+
+        kubectl create namespace ingress-nginx
+        kubectl label namespace ingress-nginx cert-manager.io/disable-validation=true
+
+1. Create admission controller roles
+
+        kubectl apply -f .\kubernetes\ingress\admission-service-account.yaml
+
+1. Install Nginx Ingress
+
+        helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+
+ 1. Wait until nginx containers run
+
+        kubectl get pods -n ingress-nginx
+        NAME                                       READY   STATUS    RESTARTS   AGE
+        ingress-nginx-controller-cb87575f5-pztmr   1/1     Running   0          74s
+
+### Install Cert-Manager
+
+1. Add repo
+        
+        helm repo add jetstack https://charts.jetstack.io
+
+1. Create namespace 
+
+        kubectl create namespace cert-manager
+        
+1. Install Cert-Manager
+
+        helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1 --set installCRDs=true
+
+1. Wait until cert-manager pods are running
+
+        kubectl get pod -n cert-manager
+        NAME                                       READY   STATUS    RESTARTS   AGE
+        cert-manager-7998c69865-s9lwk              1/1     Running   0          28s
+        cert-manager-cainjector-7b744d56fb-ldgbv   1/1     Running   0          28s
+        cert-manager-webhook-97f8b47bc-cr96d       1/1     Running   0          28s
+
+1. Install lets-encrypt
+
+        kubectl apply -f ./kubernetes/letsencrypt/letsencrypt-staging-clusterissuer.yaml -n cert-manager
+
+1. Verify creation of lets-encrypt
+
+        kubectl describe clusterissuer letsencrypt-staging -n cert-manager
 
 ### Install Dapr
 
@@ -152,10 +176,8 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
         helm repo add dapr https://dapr.github.io/helm-charts/
         helm repo update
-
-1. See which chart versions are available
-    
-        helm search repo dapr --devel --versions
+   
+   > Optionally search for newest version ```helm search repo dapr --devel --versions```
 
 1. Install dapr
 
@@ -174,16 +196,16 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
         dapr-sentry-858fddc4f7-9hp2w            1/1     Running   0          2m19s
         dapr-sidecar-injector-7497b7945-b9g5g   1/1     Running   0          2m19s
 
+1. Create palprimes namespace
+
+        kubectl create namespace palprimes
+
 ### Install Redis & Configure pubsub and statestore
 
 1. Add bitnami repo 
 
         helm repo add bitnami https://charts.bitnami.com/bitnami
         helm repo update
-
-1. Create palprimes namespace
-
-        kubectl create namespace palprimes
 
 1. Install Redis
 
@@ -200,10 +222,47 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
     >Uninstall Redis by running ```helm uninstall redis --namespace palprimes```
 
-1. Configure pubsub and statestore
+1. Configure redis pubsub and statestore dapr components
 
         kubectl apply -f ./kubernetes/components/redis-statestore.yaml
         kubectl apply -f ./kubernetes/components/redis-pubsub.yaml
+
+### Install Kafka & Configure kafka-pubsub dapr component
+
+The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
+
+1. Install strimzi Custom Resource Definition (CRD).
+
+        kubectl create -f 'https://strimzi.io/install/latest?namespace=palprimes' -n palprimes
+
+1. Wait until strimzi pod is created
+
+        kubectl get pods -n palprimes
+        NAME                                        READY   STATUS    RESTARTS   AGE
+        redis-master-0                              1/1     Running   0          2m35s
+        redis-replicas-0                            1/1     Running   0          2m35s
+        redis-replicas-1                            1/1     Running   0          107s
+        redis-replicas-2                            1/1     Running   0          80s
+        strimzi-cluster-operator-587cb79468-g9d5x   1/1     Running   0          89s
+
+1. Provision the Apache Kafka cluster
+
+        kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-persistent-single.yaml -n palprimes
+
+1. Wait while Kubernetes starts the required pods, services and so on:
+
+        kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n palprimes
+
+1. Create topics
+
+        kubectl create -f ./kubernetes/topics/receivenumber-topic.yaml
+        kubectl create -f ./kubernetes/topics/results-topic.yaml
+
+   >You can delete topic by running `kubectl delete -f ./kubernetes/topics/receivenumber-topic.yaml`
+
+1. Configure Kafka pubsub
+
+        kubectl apply -f ./kubernetes/components/kafka-pubsub.yaml
 
 ### Deploy and Configure Zipkin
 
@@ -219,92 +278,37 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
         kubectl apply -f ./kubernetes/config/tracing.yaml
 
-### Access Zipkin
+   >Access Zipkin at <http://localhost:9411> after running ```kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system``` 
 
-Expose Zipkin
+   >Access Dapr dashboard at <http://localhost:8080> after running ```dapr dashboard -k```
 
-        kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system
+### DEPRECATED - Install Kubernetes Metrics Server
 
-Access zipkin at: <http://localhost:9411>
+Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
 
-### Access Dapr dashboard
+        kubectl apply -f .\kubernetes\metrics\components.yaml
 
-1. Expose dashboard
+>Metrics yaml fetched from <https://github.com/kubernetes-sigs/metrics-server/releases>
 
-        dapr dashboard -k
+## How to
 
-1. Access dashboard at <http://localhost:8080>
+### Test Kafka on Docker
 
-## Kafka
-
-Using Confluent image inspired by this article: <https://developer.confluent.io/quickstart/kafka-docker/>
-
-### Install on Docker
-
-1. Run docker compose up
-
-        docker-compose.exe -f .\docker-compose.yml -f .\docker-compose.debug.yml up -d
-
-### Test on Docker
-
-Create test topic
+1. Create test topic
 
         docker exec broker kafka-topics --bootstrap-server broker:9092 --create --topic quickstart
 
-Write messages to the topic
+1. Write messages to the topic
 
         docker exec --interactive --tty broker kafka-console-producer --bootstrap-server broker:9092 --topic quickstart
 
- >Write some text in the terminal window (such as `Hello`) and hit Enter. 
+    >Write some text in the terminal window (such as `Hello`) and hit Enter. 
 
-Start new terminal window and execute command below to read messages from the topic
+1. Start new terminal window and execute command below to read messages from the topic
 
         docker exec --interactive --tty broker kafka-console-consumer --bootstrap-server broker:9092 --topic quickstart --from-beginning
 
-> Now you can produce messages in one terminal window and see them consumed in another.
+   > Now you can produce messages in one terminal window and see them consumed in another.
 
-> Delete topic by running `docker exec broker kafka-topics --bootstrap-server broker:9092 --delete --topic quickstart`
+1. Delete topic by running `docker exec broker kafka-topics --bootstrap-server broker:9092 --delete --topic quickstart`
 
-### Install on Kubernetes
-
-Describes installing Kafka using Strimzi operator. 
-The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
-
-If not already created, create Palprimes namespace.
-
-        kubectl create namespace palprimes
-
-Install strimzi Custom Resource Definition (CRD).
-
-        kubectl create -f 'https://strimzi.io/install/latest?namespace=palprimes' -n palprimes
-
-Provision the Apache Kafka cluster
-
-        kubectl apply -f https://strimzi.io/examples/latest/kafka/kafka-persistent-single.yaml -n palprimes
-
-Wait while Kubernetes starts the required pods, services and so on:
-
-        kubectl wait kafka/my-cluster --for=condition=Ready --timeout=300s -n palprimes 
-
-Create topics
-
-        kubectl create -f ./kubernetes/topics/receivenumber-topic.yaml
-        kubectl create -f ./kubernetes/topics/results-topic.yaml
-
- >Delete topic by running `kubectl delete -f ./kubernetes/topics/receivenumber-topic.yaml`
-
-### Test on Kubernetes
-
-Run below command to start producing messages
-
-        kubectl -n palprimes run kafka-producer -ti --image=quay.io/strimzi/kafka:0.28.0-kafka-3.1.0 --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9092 --topic quickstart
-
-Run below command in new terminal window to start consuming messages
-
-        kubectl -n palprimes run kafka-consumer -ti --image=quay.io/strimzi/kafka:0.28.0-kafka-3.1.0 --rm=true --restart=Never -- bin/kafka-console-consumer.sh --bootstrap-server  my-cluster-kafka-bootstrap:9092 --topic quickstart --from-beginning
-
-### Install Dapr kafka-pubsub component
-
-Run command below.
-
-        kubectl apply -f ./kubernetes/components/kafka-pubsub.yaml

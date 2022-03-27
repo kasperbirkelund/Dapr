@@ -7,6 +7,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Palprime } from './palprime';
 import { trigger, transition, style, animate, query, stagger } from '@angular/animations';
 import { ConfigService } from './config/config.service';
+import { ReturnStatement } from '@angular/compiler';
 
 const listFadeAnimation = trigger('listFadeAnimation', [
   transition('* <=> *', [
@@ -77,6 +78,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   load(): void {
+    if (this.range === 0) {
+      alert('Enter value greater than 0.');
+      return;
+    }
     this.palprimes.next([]);
     this.progressIncrement = 100 / this.range;
     this.progressValue = 0;
