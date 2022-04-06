@@ -28,6 +28,7 @@ podAnnotations:
   dapr.io/app-id: "palapi"
   dapr.io/app-port: "5226"
   dapr.io/config: "tracing"
+  dapr.io/log-as-json: "true"
 
 podSecurityContext: {}
   # fsGroup: 2000
