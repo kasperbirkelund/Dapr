@@ -18,7 +18,7 @@
 1. Get open tracing to work with zipkin on Docker and Kubernetes
         1. General info: https://docs.microsoft.com/en-us/dotnet/architecture/dapr-for-net-developers/observability
         1. Example with Zipkin exporter: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/examples/AspNetCore
-1. Competing consumers - skalering ("consumer.groups in redis")
+1. Competing consumers - skalering ("consumer.groups in redis") (DONE)
 1. Azure Kubernetes
 
 ## Run apps on Docker
