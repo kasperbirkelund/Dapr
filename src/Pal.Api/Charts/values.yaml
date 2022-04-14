@@ -27,8 +27,9 @@ podAnnotations:
   dapr.io/enabled: "true"
   dapr.io/app-id: "palapi"
   dapr.io/app-port: "5226"
-  dapr.io/config: "tracing"
+  dapr.io/config: "otel-collector"
   dapr.io/log-as-json: "true"
+  dapr.io/log-level: "info"
 
 podSecurityContext: {}
   # fsGroup: 2000
@@ -48,9 +49,13 @@ service:
 ingress:
   enabled: false  
      
-#secrets: 
-#  ConnectionStrings:
-#   DefaultConnection: "User ID=postgres;Password=postgres;Host=postgresql.postgresql.svc.cluster.local;Port=5432;Database=palprimes;Pooling=true"
+secrets:  
+  Observability:
+    TracingExporter: otlp
+    MetricsExporter: otlp
+    LogExporter: otlp
+  Otlp:
+    Endpoint: http://otel-collector.default.svc.cluster.local:9411/api/v2/spans
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -66,7 +71,7 @@ resources: {}
 
 autoscaling:
   enabled: true
-  minReplicas: 3
+  minReplicas: 6
   maxReplicas: 20
   targetCPUUtilizationPercentage: 80
   targetMemoryUtilizationPercentage: 80

@@ -1,6 +1,7 @@
 using Dapr.Client;
 using Palprimes.Api.Model;
 using Palprimes.Common;
+using Palprimes.Common.Events;
 
 namespace Palprimes.Api.Services
 {

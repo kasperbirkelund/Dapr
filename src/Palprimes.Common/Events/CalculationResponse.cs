@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Palprimes.Common
+﻿namespace Palprimes.Common.Events
 {
     public class CalculationResponse
     {

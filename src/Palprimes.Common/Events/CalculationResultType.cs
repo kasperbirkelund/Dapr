@@ -1,4 +1,4 @@
-namespace Palprimes.Common
+namespace Palprimes.Common.Events
 {
     public enum CalculationResultType
     {

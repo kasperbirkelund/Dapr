@@ -1,4 +1,5 @@
 using Pal.Api.Services;
+using Palprimes.Common.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,9 +12,10 @@ builder.Services
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddPalServices();
 builder.Services.AddDaprClient();
-builder.Services.AddScoped<DefaultPalNumberStrategy>();
 builder.Services.AddHealthChecks();
+builder.Services.AddOpenTelemetry("palapi", builder.Logging, builder.Configuration);
 
 var app = builder.Build();
 

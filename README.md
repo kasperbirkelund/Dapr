@@ -11,7 +11,7 @@
     1. Blazor
     1. SignalR (DONE)
     1. Angular (DONE)
-1. Implementere algoritmer for Prime og Pal (DONE)
+1. Implementer algorithm's for Prime og Pal (DONE)
 1. Fix bug med Prime-api (DONE)
 1. Docker-Desktop Kubernetes (DONE)
         1. Add SignalR back plane.
@@ -183,7 +183,7 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
 1. Install dapr
 
-        helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait
+        helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait --set global.logAsJson=true
 
     >Uninstall dapr by running ```helm uninstall dapr --namespace dapr-system``` 
 
@@ -284,6 +284,20 @@ The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
 
    >Access Dapr dashboard at <http://localhost:8080> after running ```dapr dashboard -k```
 
+## Open Telemetry
+
+### Open Telemetry Collector
+
+This runs only on Kubernetes.
+
+Install collector
+
+        kubectl apply -f ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml
+
+Install Dapr component 
+
+        kubectl apply -f ./kubernetes/config/otel-collector.yaml
+
 ### DEPRECATED - Install Kubernetes Metrics Server
 
 Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
@@ -314,3 +328,8 @@ Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-dock
 
 1. Delete topic by running `docker exec broker kafka-topics --bootstrap-server broker:9092 --delete --topic quickstart`
 
+## Dapr How-to
+
+Display Dapr config in kubernetes
+
+        dapr configurations --kubernetes

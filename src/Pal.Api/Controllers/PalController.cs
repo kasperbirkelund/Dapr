@@ -5,6 +5,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Pal.Api.Services;
 using Palprimes.Common;
+using Palprimes.Common.Events;
 
 [ApiController]
 [Route("[controller]")]

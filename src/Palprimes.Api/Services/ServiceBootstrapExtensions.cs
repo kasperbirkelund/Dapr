@@ -2,11 +2,9 @@ namespace Palprimes.Api.Services
 {
     public static class ServiceBootstrapExtensions
     {
-        public static IServiceCollection AddServices(this IServiceCollection services)
-        {                        
-            services.AddSingleton<StateManagementService>();
-
-            return services;
+        public static IServiceCollection AddPalprimesServices(this IServiceCollection services)
+        {
+            return services.AddSingleton<StateManagementService>();
         }
     }
 }

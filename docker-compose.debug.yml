@@ -13,9 +13,16 @@ services:
         "palprimesapi",
         "-app-port",
         "5221",
-        "-components-path", "/components",
-        "-config", "/config/config.yaml",
-        "-placement-host-address", "placement:50006"
+        "-components-path",
+        "/components",
+        "-config",
+        "/config/config.yaml",
+        "-placement-host-address",
+        "placement:50006",
+        "-log-as-json",
+        "true",
+        "-log-level",
+        "info"
       ]
     volumes:
       - "./dapr/components/:/components"
@@ -33,9 +40,16 @@ services:
         "primeapi",
         "-app-port",
         "5225",
-        "-components-path", "/components",
-        "-config", "/config/config.yaml",
-        "-placement-host-address", "placement:50006"
+        "-components-path",
+        "/components",
+        "-config",
+        "/config/config.yaml",
+        "-placement-host-address",
+        "placement:50006",
+        "-log-as-json",
+        "true",
+        "-log-level",
+        "info"
       ]
     volumes:
       - "./dapr/components/:/components"
@@ -53,10 +67,16 @@ services:
         "palapi",
         "-app-port",
         "5226",
-        "-components-path", "/components",  
-        "-config", "/config/config.yaml",      
+        "-components-path",
+        "/components",
+        "-config",
+        "/config/config.yaml",
         "-placement-host-address",
-        "placement:50006"
+        "placement:50006",
+        "-log-as-json",
+        "true",
+        "-log-level",
+        "info"
       ]
     volumes:
       - "./dapr/components/:/components"
@@ -70,7 +90,7 @@ services:
     command: [ "./placement", "-port", "50006" ]
     ports:
       - "50006:50006"
-      
+
   redis:
     image: redis:alpine
 
@@ -88,8 +108,8 @@ services:
     image: confluentinc/cp-kafka:7.0.1
     container_name: broker
     ports:
-    # To learn about configuring Kafka for access across networks see
-    # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
+      # To learn about configuring Kafka for access across networks see
+      # https://www.confluent.io/blog/kafka-client-cannot-connect-to-broker-on-aws-on-docker-etc/
       - "9092:9092"
     depends_on:
       - zookeeper

@@ -1,3 +1,4 @@
+using Palprimes.Common.Logging;
 using Prime.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,8 +11,9 @@ builder.Services
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<DefaultPrimeNumberStrategy>();
+builder.Services.AddPrimeServices();
 builder.Services.AddHealthChecks();
+builder.Services.AddOpenTelemetry("primeapi", builder.Logging, builder.Configuration);
 
 var app = builder.Build();
 
