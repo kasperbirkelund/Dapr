@@ -14,7 +14,7 @@
 1. Implementer algorithm's for Prime og Pal (DONE)
 1. Fix bug med Prime-api (DONE)
 1. Docker-Desktop Kubernetes (DONE) 1. Add SignalR back plane.
-1. Get open tracing to work with zipkin on Docker and Kubernetes 1. General info: https://docs.microsoft.com/en-us/dotnet/architecture/dapr-for-net-developers/observability 1. Example with Zipkin exporter: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/examples/AspNetCore
+1. Get open tracing to work with zipkin on Docker and Kubernetes 1. General info: https://docs.microsoft.com/en-us/dotnet/architecture/dapr-for-net-developers/observability 1. Example with Zipkin exporter: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/examples/AspNetCore (DONE)
 1. Competing consumers - skalering ("consumer.groups in redis") (DONE)
 1. Azure Kubernetes
 
