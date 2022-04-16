@@ -8,6 +8,10 @@ metadata:
 data:
   otel-collector-config: |
     receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
       zipkin:
         endpoint: 0.0.0.0:9411
     extensions:
@@ -16,21 +20,35 @@ data:
         endpoint: :1888
       zpages:
         endpoint: :55679
+    processors:
+      batch:   
     exporters:
       logging:
         loglevel: debug
       zipkin:
-        endpoint: "http://zipkin.dapr-system.svc.cluster.local:9411/api/v2/spans"
+        endpoint: "http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans"
         tls:
           insecure: true
-        
+      prometheus:
+        endpoint: "prometheus-server.monitoring:8889"
+        namespace: "default"
+    
+
     service:
       extensions: [pprof, zpages, health_check]
       pipelines:
         traces:
           receivers: [zipkin]
-          # List your exporter here.
+          processors: [batch]
           exporters: [zipkin,logging]
+        #metrics:
+        #  receivers: [otlp]
+        #  processors: [batch]
+        #  exporters: [zipkin]        
+        #  logs:
+          #  receivers: [otlp]
+          #  processors: [batch]
+          #  exporters: [zipkin]                   
 ---
 apiVersion: v1
 kind: Service

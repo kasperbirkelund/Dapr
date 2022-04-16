@@ -26,7 +26,7 @@ public class PrimeController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
-        _logger.LogInformation($"Received {request.Number}");
+        _logger.LogInformation("Received {Number}", request.Number);
         var result = await _strategy.IsPrimeAsync(request.Number);
 
         var response = new CalculationResponse
@@ -40,7 +40,7 @@ public class PrimeController : ControllerBase
         await _daprClient.PublishEventAsync(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.Results, response,
             DaprDomain.EventMetadata.PartitionKeyMetadata(response.Number));
 
-        _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
+        _logger.LogInformation("Sent response {Type}/{Number}/{Result}", "Prime", response.Number, response.Result);
 
         return Ok();
     }

@@ -44,8 +44,7 @@ Hit <http://localhost:4200> in your browser.
 
 ## Run apps on Kubernetes
 
-> Before you continue make sure to 1) [Setup Kubernetes and Dapr](#kubernetes) and 2) [Setup Open Telemetry on Kubernetes](#open-telemetry).
-> 
+> Before you continue make sure to 1) [Setup Kubernetes and Dapr](#kubernetes) and 2) [Setup Open Observability on Kubernetes](#observability).
 
 ### Build & package apps
 
@@ -264,65 +263,117 @@ The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
 
         kubectl apply -f ./kubernetes/components/kafka-pubsub.yaml
 
+## Observability
+
+The three pillars of observability are Logs, Metrics and Traces.
+In this project we use different monitoring backends for each of above types (mostly to try things out). 
+Zipkin is used for Tracing, Prometheus and Grafana for Metrics and ELK for Logs.
+
+We are using OpenTelemetry Collector to collect all logs from service and service sidecar pods and to ship them to corresponding backend.
+
+![Open Telemetry Draw.io](images/opentelemetry.png)
+
 ### Deploy and Configure Zipkin
 
 1.  Create Zipkin Deployment
 
-        kubectl create deployment zipkin --image openzipkin/zipkin --namespace dapr-system
+        kubectl create deployment zipkin --image openzipkin/zipkin --namespace monitoring
 
 1.  Create a Kubernetes service for the Zipkin pod
 
-        kubectl expose deployment zipkin --type ClusterIP --port 9411 --namespace dapr-system
+        kubectl expose deployment zipkin --type ClusterIP --port 9411 --namespace monitoring
 
 1.  Deploy Dapr config
 
          kubectl apply -f ./kubernetes/config/tracing.yaml
 
-#### Access Zipkin 
- 
-1. Forward zipkin port
-        
-        kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system
+#### Access Zipkin
 
-1. Access it at <http://localhost:9411> 
+1.  Forward zipkin port
 
-#### Access Dapr dashboard
+        kubectl port-forward svc/zipkin 9411:9411 --namespace monitoring
 
-1. Run below command 
+1.  Access it at <http://localhost:9411>
 
-        dapr dashboard -k
+### Install Prometheus
 
- 1. Access Dapr dashboard at <http://localhost:8080>
+1. Add community Helm repo
 
-### DEPRECATED - Install Kubernetes Metrics Server
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
-Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-docker-desktop-5434>
+2. Install Prometheus
 
-        kubectl apply -f .\kubernetes\metrics\components.yaml
+        helm install prometheus prometheus-community/prometheus --set nodeExporter.hostRootfs=false -n monitoring
 
-> Metrics yaml fetched from <https://github.com/kubernetes-sigs/metrics-server/releases>
+3. Make sure Prometheus is running
 
-## Open Telemetry
+        kubectl get pods -n monitoring
 
-We are using OpenTelemetry Collector to collect all metrics and telemetry from services and service sidecar pods.
+        NAME                                             READY   STATUS    RESTARTS   AGE
+        prometheus-alertmanager-756485f5c5-x7592         2/2     Running   0          42s
+        prometheus-kube-state-metrics-5fd8648d78-rhpct   1/1     Running   0          42s
+        prometheus-node-exporter-6qpqf                   1/1     Running   0          42s
+        prometheus-pushgateway-cc8bfc8-mhr8r             1/1     Running   0          42s
+        prometheus-server-5b6d7bd447-p9bwv               2/2     Running   0          42s
 
-![Opentelemetrt drawio](images/opentelemetry.png)
+### Install Grafana
 
-### Open Telemetry Collector
+1. Add the Grafana Helm repo
+
+        helm repo add grafana https://grafana.github.io/helm-charts
+
+1 Install Grafana
+
+        helm install grafana grafana/grafana -n monitoring
+
+1. Validation Grafana is running in your cluster
+
+        kubectl get pods -n monitoring
+
+        NAME                                             READY   STATUS    RESTARTS   AGE
+        grafana-5bdc6d56df-jswkr                         1/1     Running   0          30s
+        ...
+
+#### Access Grafana
+
+1. Retrieve the admin password for Grafana login
+
+        kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+1. Forward port
+
+        kubectl port-forward svc/grafana 8080:80 -n monitoring
+
+1. Open a browser to <http://localhost:8080>
+
+#### Add Prometheus datasource to Grafana
+
+1. Access Grafana
+1. Add Prometheus Data source
+
+![Grafana Prometheus Setup](images/grafana-prometheus-setup.png)
+
+1. Click on Save & Test
+
+### OpenTelemetry Collector
 
 This runs only on Kubernetes.
 
-1. Install collector
+1.  Create Kubernetes namespace
 
-        kubectl apply -f ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml
+        kubectl create namespace monitoring
 
-2. Install Dapr component
+1.  Install collector
+
+        kubectl apply -f ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml -n monitoring
+
+1.  Install Dapr component
 
         kubectl apply -f ./kubernetes/config/otel-collector.yaml
 
-Now if you run Palprimes on Kubernetes, you should see the instrumentation logs in Zipkin.
+Now if you run Palprimes on Kubernetes, you should see the trace logs in Zipkin.
 
-![OTEL Zipkin logs](images/otel-zipkin-logs.png)
+![Open Telemetry Trace in Zipkin](images/otel-zipkin-logs.png)
 
 ## How to
 
@@ -346,8 +397,23 @@ Now if you run Palprimes on Kubernetes, you should see the instrumentation logs 
 
 1.  Delete topic by running `docker exec broker kafka-topics --bootstrap-server broker:9092 --delete --topic quickstart`
 
-## Dapr How-to
-
-Display Dapr config in kubernetes
+### Display Dapr config in kubernetes
 
         dapr configurations --kubernetes
+
+### Display pod logs
+
+Run below command with appropriate args ```kubectl logs {pod_name} -c palprimesapi -n {container_name}```
+E.g.
+        
+        kubectl logs palprimesapi-798d555776-dcpn8 -c palprimesapi -n palprimes
+
+Add --follow flag to stream tail.
+
+### Access Dapr dashboard
+
+1.  Run below command
+
+        dapr dashboard -k
+
+1.  Access Dapr dashboard at <http://localhost:8080>

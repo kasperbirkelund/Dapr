@@ -28,7 +28,7 @@ public class PalController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> ReceiveNumber([FromBody] CalculationRequest request)
     {
-        _logger.LogInformation($"Received {request.Number}");
+        _logger.LogInformation("Received {Number}", request.Number);
 
         var result = await _strategy.IsPalindromicAsync(request.Number, decimalBase);
         var response = new CalculationResponse
@@ -42,7 +42,7 @@ public class PalController : ControllerBase
         await _daprClient.PublishEventAsync(DaprDomain.KafkaPubSub, DaprDomain.PubSubTopics.Results, response,
             DaprDomain.EventMetadata.PartitionKeyMetadata(response.Number));
 
-        _logger.LogInformation($"Sent response {response.Number}/{response.Result}");
+        _logger.LogInformation("Sent response {Type}/{Number}/{Result}", "Pal", response.Number, response.Result);
 
         return Ok();
     }

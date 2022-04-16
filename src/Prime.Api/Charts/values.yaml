@@ -27,7 +27,7 @@ podAnnotations:
   dapr.io/enabled: "true"
   dapr.io/app-id: "primeapi"
   dapr.io/app-port: "5225"
-  dapr.io/config: "otel-collector"
+  dapr.io/config: "tracing"
   dapr.io/log-as-json: "true"
   dapr.io/log-level: "info"
 
@@ -55,7 +55,7 @@ secrets:
     MetricsExporter: otlp
     LogExporter: otlp
   Otlp:
-    Endpoint: http://otel-collector.default.svc.cluster.local:9411/api/v2/spans
+    Endpoint: http://otel-collector.monitoring.svc.cluster.local:9411/api/v2/spans
       
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

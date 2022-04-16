@@ -19,7 +19,7 @@ public class CalculationController : ControllerBase
     private readonly StateManagementService _stateService;
 
     public CalculationController(
-        StateManagementService stateService, 
+        StateManagementService stateService,
         IHubContext<NotificationHub> hubContext,
         ILogger<CalculationController> logger)
     {
@@ -32,7 +32,7 @@ public class CalculationController : ControllerBase
     [Route("api/GetCalculations/{clientId}/{top}")]
     public async Task<IActionResult> GetCalculations(string clientId, int top)
     {
-        _logger.LogInformation($"Start publish {top} numbers.");
+        _logger.LogInformation("Start publish {Top} numbers.", top);
 
         var numbers = Enumerable.Range(1, top);
         var requests = numbers.Select(x => new CalculationRequest { Number = x, ClientId = clientId });
@@ -40,9 +40,9 @@ public class CalculationController : ControllerBase
         using var client = new DaprClientBuilder().Build();
         var requestTasks = requests.Select(request =>
         {
-            return client.PublishEventAsync(DaprDomain.KafkaPubSub, 
-                DaprDomain.PubSubTopics.ReceiveNumber, 
-                request, 
+            return client.PublishEventAsync(DaprDomain.KafkaPubSub,
+                DaprDomain.PubSubTopics.ReceiveNumber,
+                request,
                 DaprDomain.EventMetadata.PartitionKeyMetadata(request.Number));
         });
 
@@ -57,17 +57,17 @@ public class CalculationController : ControllerBase
     [HttpPost(DaprDomain.PubSubTopics.Results)]
     public async Task<IActionResult> ReceiveResults([FromBody] CalculationResponse response)
     {
-        _logger.LogInformation($"Received response {response.Type}/{response.Number}/{response.Result}");
+        _logger.LogInformation("Received response {Type}/{Number}/{Response}", response.Type, response.Number, response.Result);
 
         var state = await _stateService.SetStateAsync(response);
 
-        _logger.LogInformation($"State: {response.ClientId}/IsPal:${state.IsPal}/IsPrime:${state.IsPrime}.");
+        _logger.LogInformation("State: {ClientId}/IsPal:{IsPal}/IsPrime:{IsPrime}.", response.ClientId, state.IsPal, state.IsPrime);
 
         if (state.IsPal.HasValue && state.IsPrime.HasValue)
         {
-            _logger.LogInformation($"Response: {response.ClientId}/{response.ClientId}/IsPal:${state.IsPal.Value}/IsPrime:${state.IsPrime.Value}");            
+            _logger.LogInformation("Response: {ClientId}/IsPal:{IsPal}/IsPrime:{IsPrime}", response.ClientId, state.IsPal.Value, state.IsPrime.Value);
             await _hubContext.Clients.Groups(response.ClientId).SendAsync("result", state);
-            
+
             //We could remove this and start caching and serving results also directly from state store.
             await _stateService.ResetStateAsync(state);
         }
