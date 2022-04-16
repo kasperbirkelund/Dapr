@@ -6,5 +6,7 @@ metadata:
 spec:
   tracing:
     samplingRate: "1"
+    metric:
+      enabled: true
     zipkin:
       endpointAddress: "http://zipkin.dapr-system.svc.cluster.local:9411/api/v2/spans"

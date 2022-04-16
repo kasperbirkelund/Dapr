@@ -4,6 +4,7 @@ using Dapr;
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using Palprimes.Common;
+using Palprimes.Common.Events;
 using Prime.Api.Services;
 
 [ApiController]

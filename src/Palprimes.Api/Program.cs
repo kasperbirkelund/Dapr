@@ -1,5 +1,6 @@
 using Palprimes.Api.Hubs;
 using Palprimes.Api.Services;
+using Palprimes.Common.Logging;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,31 +23,21 @@ builder.Services.AddCors(options => options.AddPolicy("default", builder =>
     builder.AllowAnyHeader();
 }));
 
-builder.Services.AddServices();
+builder.Services.AddPalprimesServices();
 builder.Services.AddHealthChecks();
-
-var configuration = new ConfigurationBuilder() // add all configuration sources used
-    .AddJsonFile("appsettings.json", false, true)
-    .AddEnvironmentVariables()
-    .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true, true)
-    .Build();
-
-using var loggerFactory = LoggerFactory.Create(loggingBuilder => loggingBuilder
-    .AddConfiguration(configuration));
-
-ILogger logger = loggerFactory.CreateLogger<Program>();
+builder.Services.AddOpenTelemetry("palprimesapi", builder.Logging, builder.Configuration);
 
 var signalR = builder.Services.AddSignalR();
 
 if (!builder.Environment.IsDevelopment())
 {
-    var settings = builder.Configuration
-        .GetSection("Settings");
+    var redisSettings = builder.Configuration
+        .GetSection("Redis");
 
-    var redisHost = settings.GetValue<string>("RedisHost");
-    var redisPassword = settings.GetValue<string>("RedisPassword");
+    var redisHost = redisSettings.GetValue<string>("Host");
+    var redisPassword = redisSettings.GetValue<string>("Password");
 
-    logger.LogInformation($"Redis host: {redisHost}");
+    //logger.LogInformation($"Redis host: {redisHost}");
 
     signalR.AddStackExchangeRedis(o =>
     {
@@ -64,15 +55,15 @@ if (!builder.Environment.IsDevelopment())
             var connection = await ConnectionMultiplexer.ConnectAsync(config, writer);
             connection.ConnectionFailed += (_, e) =>
             {
-                logger.LogError("Connection to Redis failed.");
+                //logger.LogError("Connection to Redis failed.");
             };
 
             connection.ConnectionRestored += (_, args) =>
             {
-                logger.LogInformation("Connection to Redis restored.");
+                //logger.LogInformation("Connection to Redis restored.");
             };
 
-            logger.LogInformation("Connected to Redis.");
+            //logger.LogInformation("Connected to Redis.");
 
             return connection;
         };

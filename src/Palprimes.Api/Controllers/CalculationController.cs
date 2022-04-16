@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Palprimes.Api.Hubs;
 using Palprimes.Api.Services;
 using Palprimes.Common;
+using Palprimes.Common.Events;
 
 namespace Palprimes.Api.Controllers;
 
