@@ -44,7 +44,8 @@ Hit <http://localhost:4200> in your browser.
 
 ## Run apps on Kubernetes
 
-> Before you continue make sure to setup Kubernetes and Dapr on [Kubernetes](#Kubernetes).
+> Before you continue make sure to 1) [Setup Kubernetes and Dapr](#kubernetes) and 2) [Setup Open Telemetry on Kubernetes](#open-telemetry).
+> 
 
 ### Build & package apps
 
@@ -277,9 +278,21 @@ The guide is inspired by this quick start: <https://strimzi.io/quickstarts/>
 
          kubectl apply -f ./kubernetes/config/tracing.yaml
 
-    > Access Zipkin at <http://localhost:9411> after running `kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system`
+#### Access Zipkin 
+ 
+1. Forward zipkin port
+        
+        kubectl port-forward svc/zipkin 9411:9411 --namespace dapr-system
 
-    > Access Dapr dashboard at <http://localhost:8080> after running `dapr dashboard -k`
+1. Access it at <http://localhost:9411> 
+
+#### Access Dapr dashboard
+
+1. Run below command 
+
+        dapr dashboard -k
+
+ 1. Access Dapr dashboard at <http://localhost:8080>
 
 ### DEPRECATED - Install Kubernetes Metrics Server
 
@@ -291,17 +304,25 @@ Inspiration from <https://dev.to/docker/enable-kubernetes-metrics-server-on-dock
 
 ## Open Telemetry
 
+We are using OpenTelemetry Collector to collect all metrics and telemetry from services and service sidecar pods.
+
+![Opentelemetrt drawio](images/opentelemetry.png)
+
 ### Open Telemetry Collector
 
 This runs only on Kubernetes.
 
-Install collector
+1. Install collector
 
         kubectl apply -f ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml
 
-Install Dapr component
+2. Install Dapr component
 
         kubectl apply -f ./kubernetes/config/otel-collector.yaml
+
+Now if you run Palprimes on Kubernetes, you should see the instrumentation logs in Zipkin.
+
+![OTEL Zipkin logs](images/otel-zipkin-logs.png)
 
 ## How to
 
