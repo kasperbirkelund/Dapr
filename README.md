@@ -63,13 +63,13 @@ Hit <http://localhost:4200> in your browser.
 
     > In case you want to test the output just uncomment `--dry-run >> ./dist/{appname}.yaml`.
 
-        helm upgrade angularapp -f ./src/Frontend/Angular/angular-app/charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest ./dist/helm/angularapp-0.0.0-latest.tgz # --dry-run >> ./dist/angularapp.yaml
+        helm upgrade angularapp -f ./src/Frontend/Angular/angular-app/charts/values.yaml --install --version=latest -n palprimes --set buildID=latest --set image.tag=latest ./dist/helm/angularapp-0.0.0-latest.tgz # --dry-run >> ./dist/angularapp.yaml
 
-        helm upgrade palprimesapi -f ./src/Palprimes.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palprimesapi-0.0.0-latest.tgz #--dry-run >> dist/palprimesapi.yaml
+        helm upgrade palprimesapi -f ./src/Palprimes.Api/Charts/values.yaml --install --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palprimesapi-0.0.0-latest.tgz #--dry-run >> dist/palprimesapi.yaml
 
-        helm upgrade primeapi -f ./src/Prime.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/primeapi-0.0.0-latest.tgz #--dry-run >> dist/primeapi.yaml
+        helm upgrade primeapi -f ./src/Prime.Api/Charts/values.yaml --install --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/primeapi-0.0.0-latest.tgz #--dry-run >> dist/primeapi.yaml
 
-        helm upgrade palapi -f ./src/Pal.Api/Charts/values.yaml --install --recreate-pods --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palapi-0.0.0-latest.tgz #--dry-run >> dist/palapi.yaml
+        helm upgrade palapi -f ./src/Pal.Api/Charts/values.yaml --install --version=latest -n palprimes --set buildID=latest --set image.tag=latest --set ASPNETCORE_ENVIRONMENT=Production ./dist/helm/palapi-0.0.0-latest.tgz #--dry-run >> dist/palapi.yaml
 
 ### Uninstall apps
 
@@ -98,17 +98,6 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
 
         kubectl apply -f .\kubernetes\dashboard\admin-user.yaml
         kubectl apply -f .\kubernetes\dashboard\cluster-rolebinding.yaml
-
-1.  Get token for login
-
-        kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
-
-1.  Copy the token to use it with Dashboard login.
-1.  Run command below
-
-        kubectl proxy
-
-1.  Access dashboard at <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/> after running
 
 ### Install Ingress Controller (Nginx)
 
@@ -273,6 +262,10 @@ We are using OpenTelemetry Collector to collect all logs from service and servic
 
 ![Open Telemetry Draw.io](images/opentelemetry.png)
 
+### Create namespace for monitoring
+
+        kubectl create namespace monitoring
+
 ### Deploy and Configure Zipkin
 
 1.  Create Zipkin Deployment
@@ -286,14 +279,6 @@ We are using OpenTelemetry Collector to collect all logs from service and servic
 1.  Deploy Dapr config
 
          kubectl apply -f ./kubernetes/config/tracing.yaml
-
-#### Access Zipkin
-
-1.  Forward zipkin port
-
-        kubectl port-forward svc/zipkin 9411:9411 --namespace monitoring
-
-1.  Access it at <http://localhost:9411>
 
 ### Install Prometheus
 
@@ -334,47 +319,141 @@ We are using OpenTelemetry Collector to collect all logs from service and servic
         grafana-5bdc6d56df-jswkr                         1/1     Running   0          30s
         ...
 
-#### Access Grafana
-
-1. Retrieve the admin password for Grafana login
-
-        kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-
-1. Forward port
-
-        kubectl port-forward svc/grafana 8080:80 -n monitoring
-
-1. Open a browser to <http://localhost:8080>
-
 #### Add Prometheus datasource to Grafana
 
-1. Access Grafana
+1. Access Grafana as described in [Access Grafana](#access-grafana)
 1. Add Prometheus Data source
 
 ![Grafana Prometheus Setup](images/grafana-prometheus-setup.png)
 
 1. Click on Save & Test
 
+### Elastic Search and Kibana
+
+1. Install ECK operator
+
+        kubectl create -f https://download.elastic.co/downloads/eck/2.1.0/crds.yaml -n monitoring
+
+1. Install the operator with its RBAC rules
+
+        kubectl apply -f https://download.elastic.co/downloads/eck/2.1.0/operator.yaml -n monitoring
+
+1. Monitor the operator logs
+
+        kubectl -n monitoring logs -f statefulset.apps/elastic-operator
+
+1. Install local elk cluster
+
+        kubectl apply -f .\kubernetes\elk\local-elk-cluster.yml
+
+1. Check that cluster is running
+
+        kubectl get elasticsearch -n monitoring
+        
+        NAME                HEALTH   NODES   VERSION   PHASE   AGE
+        local-elk-cluster   green    1       8.1.3     Ready   59s
+
+1. Install Kibana
+
+        kubectl apply -f .\kubernetes\elk\local-elk-kibana.yml
+
+1. Check Kibana status
+
+        kubectl get kibana -n monitoring
+
+        NAME               HEALTH   NODES   VERSION   AGE
+        local-elk-kibana   green    1       8.1.3     84s
+
+1. Install APM server
+
+        kubectl apply -f .\kubernetes\elk\local-elk-apm.yml
+
+1. Check APM server status
+
+        kubectl get apmservers -n monitoring
+
+        NAME            HEALTH   NODES   VERSION   AGE
+        local-elk-apm   green    1       8.1.3     32s
+
+### Connect APM to Elasticsearch 
+
+1. [Access Kibana](#access-kibana)
+1. Go to Integrations
+
+   ![ELK Integrations](images/elk-apm-integrations-1.png)  
+
+1. Select Installed integrations and Elastic APM
+
+   ![ELK Integrations APM](images/elk-apm-integrations-2.png)
+
+1. Click on Add Elastic APM
+   
+   ![ELK Integrations APM](images/elk-apm-integrations-3.png)
+
+1. Enter APM integration name and Click on save
+
+   ![ELK Integrations APM](images/elk-apm-integrations-4.png)
+
+1. Plaprimes APM is in the list
+
+   ![ELK Integrations APM](images/elk-apm-integrations-5.png)
+
+Next you need to configure [OpenTelemetry Collector](#opentelemetry-collector) to ship logs to ELK APM.
+
 ### OpenTelemetry Collector
 
-This runs only on Kubernetes.
+Before installing the collector we need to update the ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml with token for your APM server.
+This could be ideally done using env vars but no time, hence it is a TODO.
 
-1.  Create Kubernetes namespace
+1. Get APM Server token
 
-        kubectl create namespace monitoring
+        $rawPwd = kubectl get secret local-elk-apm-apm-token -o template='{{.data }}' -n monitoring
+        $i = $rawPwd.LastIndexOf(":")+1
+        $l = $le =$rawPwd.Length-$li-1
+        $pwd = $rawPwd.Substring($li,$le)
+        [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($pwd))
+
+1. Edit ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml file by adding token to otlp/elastic exporter.
+
+Now you can install collector.
 
 1.  Install collector
 
         kubectl apply -f ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml -n monitoring
 
-1.  Install Dapr component
+1.  Install Dapr component so Dapr also sends logs to otel.
 
         kubectl apply -f ./kubernetes/config/otel-collector.yaml
 
-Now if you run Palprimes on Kubernetes, you should see the trace logs in Zipkin.
+Now if you run Palprimes on Kubernetes, you should see the trace logs in:
+
+Zipkin
 
 ![Open Telemetry Trace in Zipkin](images/otel-zipkin-logs.png)
 
+And metrics and logs in Kibana
+
+![ELK Integrations APM](images/elk-apm-integrations-6.png)
+
+### Install Fluentd (optional)
+
+Fluent is running as daemon on Kubernetes, scraping logs from pods and forwarding them to Elasticsearch.
+Works well but needs more work to follow open telemetry standard.
+
+1. Install Fluentd
+
+        kubectl apply -f ./kubernetes/fluentd/fluentd-config-map.yaml
+        kubectl apply -f ./kubernetes/fluentd/fluentd-dapr-with-rbac.yaml
+
+1. Ensure that Fluentd is running as a daemonset
+
+        kubectl get pods -n kube-system
+        
+        NAME                                     READY   STATUS    RESTARTS       AGE
+        ...
+        fluentd-4s2zx                            1/1     Running   0              36s
+        ...
+        
 ## How to
 
 ### Test Kafka on Docker
@@ -417,3 +496,101 @@ Add --follow flag to stream tail.
         dapr dashboard -k
 
 1.  Access Dapr dashboard at <http://localhost:8080>
+
+### Access Kubernetes Dashboard
+
+1.  Get token for login
+
+        kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
+
+1.  Run command below to expose dashboard
+
+        kubectl proxy
+
+1.  Access dashboard at <http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/> after running
+
+### Access Grafana
+
+1. Retrieve the admin password for Grafana login
+
+        $pwd = kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-password}"
+        [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($pwd))
+
+1. Forward port
+
+        kubectl port-forward svc/grafana 8080:80 -n monitoring
+
+1. Open a browser to <http://localhost:8080>
+
+### Access Zipkin
+
+1.  Forward zipkin port
+
+        kubectl port-forward svc/zipkin 9411:9411 --namespace monitoring
+
+1.  Access it at <http://localhost:9411>
+
+### Access Kibana
+
+1. Get password
+
+        $pwd = kubectl get secret local-elk-cluster-es-elastic-user -o go-template='{{.data.elastic}}' -n monitoring
+        [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($pwd))
+
+1. Forward port
+
+        kubectl port-forward service/local-elk-kibana-kb-http 5601 -n monitoring
+
+1. Access at <https://localhost:5601>
+1. Login as elastic user with above password
+
+### Copy file from pod
+
+        kubectl cp -n {namespace} {pod-name}:{source/file/path} {dest-file-name}
+
+### Test Elasticsearch status
+
+1. Get password
+
+        $pwd = kubectl get secret local-elk-cluster-es-elastic-user -o go-template='{{.data.elastic}}' -n monitoring
+        [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($pwd))
+
+1. Switch to bash cmd
+
+        kubectl exec -it --namespace=monitoring local-elk-cluster-es-default-0 -- bash
+
+1. Execute Curl
+
+        curl -u "elastic:{PASSWORD}" -k "http://local-elk-cluster-es-http:9200"
+       
+        {
+                "name" : "local-elk-cluster-es-default-0",
+                "cluster_name" : "local-elk-cluster",
+                "cluster_uuid" : "SdzAjahSSLWXn8cXtByFSA",
+                "version" : {
+                "number" : "8.1.3",
+                "build_flavor" : "default",
+                "build_type" : "docker",
+                "build_hash" : "39afaa3c0fe7db4869a161985e240bd7182d7a07",
+                "build_date" : "2022-04-19T08:13:25.444693396Z",
+                "build_snapshot" : false,
+                "lucene_version" : "9.0.0",
+                "minimum_wire_compatibility_version" : "7.17.0",
+                "minimum_index_compatibility_version" : "7.0.0"
+                },
+                "tagline" : "You Know, for Search"
+        }
+
+> You can also execute above from desktop if you forward the port ```kubectl port-forward service/local-elk-cluster-es-http 9200 -n monitoring```
+
+### Uninstall Elasticsearch
+
+In case elasticsearch is stuck and it does not get ready after Docker restart or similar you must uninstall it and install it again.
+ 
+ 1. Uninstall helm release
+
+        helm uninstall elasticsearch -n monitoring
+
+1. Delete elasticsearch persistentvolumeclaim (pvc)
+
+        kubectl delete pvc elasticsearch-master-elasticsearch-master-0 -n monitoring

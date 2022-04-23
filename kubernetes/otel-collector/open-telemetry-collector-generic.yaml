@@ -11,7 +11,9 @@ data:
       otlp:
         protocols:
           grpc:
+            endpoint: 0.0.0.0:55680
           http:
+            endpoint: 0.0.0.0:55681
       zipkin:
         endpoint: 0.0.0.0:9411
     extensions:
@@ -31,24 +33,29 @@ data:
           insecure: true
       prometheus:
         endpoint: "prometheus-server.monitoring:8889"
-        namespace: "default"
-    
-
+        namespace: "default"    
+      otlp/elastic:
+        endpoint: "local-elk-apm-apm-http.monitoring:8200"
+        tls:
+          insecure: true
+        headers:
+          # Elastic APM Server secret token
+          Authorization: "Bearer 65CB5wjtTNG432R5F42eX8bY"
     service:
       extensions: [pprof, zpages, health_check]
       pipelines:
         traces:
           receivers: [zipkin]
           processors: [batch]
-          exporters: [zipkin,logging]
-        #metrics:
-        #  receivers: [otlp]
-        #  processors: [batch]
-        #  exporters: [zipkin]        
-        #  logs:
-          #  receivers: [otlp]
-          #  processors: [batch]
-          #  exporters: [zipkin]                   
+          exporters: [otlp/elastic,logging]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/elastic,logging]       
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp/elastic,logging]
 ---
 apiVersion: v1
 kind: Service
@@ -59,10 +66,10 @@ metadata:
     component: otel-collector
 spec:
   ports:
-  - name: zipkin # Default endpoint for Zipkin receiver.
-    port: 9411
-    protocol: TCP
-    targetPort: 9411
+    - name: zipkin # Default endpoint for Zipkin receiver.
+      port: 9411
+      protocol: TCP
+      targetPort: 9411
   selector:
     component: otel-collector
 ---
@@ -74,7 +81,7 @@ metadata:
     app: opentelemetry
     component: otel-collector
 spec:
-  replicas: 1  # scale out based on your usage
+  replicas: 1 # scale out based on your usage
   selector:
     matchLabels:
       app: opentelemetry
@@ -85,31 +92,31 @@ spec:
         component: otel-collector
     spec:
       containers:
-      - name: otel-collector
-        image: otel/opentelemetry-collector-contrib-dev:latest
-        command:
-          - "/otelcontribcol"
-          - "--config=/conf/otel-collector-config.yaml"
-        resources:
-          limits:
-            cpu: 1
-            memory: 2Gi
-          requests:
-            cpu: 200m
-            memory: 400Mi
-        ports:
-          - containerPort: 9411 # Default endpoint for Zipkin receiver.
-        volumeMounts:
-          - name: otel-collector-config-vol
-            mountPath: /conf
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 13133
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 13133
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib-dev:latest
+          command:
+            - "/otelcontribcol"
+            - "--config=/conf/otel-collector-config.yaml"
+          resources:
+            limits:
+              cpu: 1
+              memory: 2Gi
+            requests:
+              cpu: 200m
+              memory: 400Mi
+          ports:
+            - containerPort: 9411 # Default endpoint for Zipkin receiver.
+          volumeMounts:
+            - name: otel-collector-config-vol
+              mountPath: /conf
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 13133
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 13133
       volumes:
         - configMap:
             name: otel-collector-conf
