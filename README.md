@@ -427,13 +427,17 @@ Now you can install collector.
 
 Now if you run Palprimes on Kubernetes, you should see the trace logs in:
 
-Zipkin
+Trace logs in Zipkin. See [Accessing Zipkin](#access-zipkin)
 
 ![Open Telemetry Trace in Zipkin](images/otel-zipkin-logs.png)
 
-And metrics and logs in Kibana
+And metrics and logs in Kibana. See [Accessing Kibana](#access-kibana)
 
 ![ELK Integrations APM](images/elk-apm-integrations-6.png)
+
+And Dapr metrics in Grafana. See [Accessing Grafana](#access-grafana)
+
+![Grafana](images/grafana-view.png)
 
 ### Install Fluentd (optional)
 
