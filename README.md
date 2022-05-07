@@ -105,18 +105,9 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
 
         helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
-1.  Create namespace
-
-        kubectl create namespace ingress-nginx
-        kubectl label namespace ingress-nginx cert-manager.io/disable-validation=true
-
-1.  Create admission controller roles
-
-        kubectl apply -f .\kubernetes\ingress\admission-service-account.yaml
-
 1.  Install Nginx Ingress
 
-        helm install ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx
+        helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace --wait
 
 1.  Wait until nginx containers run
 
@@ -126,17 +117,9 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
 
 ### Install Cert-Manager
 
-1.  Add repo
-
-        helm repo add jetstack https://charts.jetstack.io
-
-1.  Create namespace
-
-        kubectl create namespace cert-manager
-
 1.  Install Cert-Manager
 
-        helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1 --set installCRDs=true
+        helm install cert-manager cert-manager --repo https://charts.jetstack.io --namespace cert-manager --create-namespace --version v1.3.1 --set installCRDs=true
 
 1.  Wait until cert-manager pods are running
 
@@ -146,11 +129,11 @@ Good in case you want visuals of Kubernetes cluster with some basic administrati
         cert-manager-cainjector-7b744d56fb-ldgbv   1/1     Running   0          28s
         cert-manager-webhook-97f8b47bc-cr96d       1/1     Running   0          28s
 
-1.  Install lets-encrypt
+1. (DEPRECATED) Install lets-encrypt 
 
         kubectl apply -f ./kubernetes/letsencrypt/letsencrypt-staging-clusterissuer.yaml -n cert-manager
 
-1.  Verify creation of lets-encrypt
+1. (DEPRECATED) Verify creation of lets-encrypt
 
         kubectl describe clusterissuer letsencrypt-staging -n cert-manager
 
@@ -169,7 +152,7 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
 1.  Install dapr
 
-        helm upgrade --install dapr dapr/dapr --version=1.6 --namespace dapr-system --create-namespace --wait --set global.logAsJson=true
+        helm upgrade --install dapr dapr/dapr --version=1.7.2 --namespace dapr-system --wait --set global.logAsJson=true --create-namespace
 
     > Uninstall dapr by running `helm uninstall dapr --namespace dapr-system`
 
@@ -197,7 +180,7 @@ Inspiration taken from her: <https://docs.dapr.io/operations/hosting/kubernetes/
 
 1.  Install Redis
 
-        helm install redis bitnami/redis --namespace palprimes --set auth.password=gexo1!
+        helm install redis bitnami/redis --namespace palprimes --set auth.password=gexo1! --create-namespace
 
 1.  Verify Redis installation
 
@@ -336,11 +319,7 @@ We are using OpenTelemetry Collector to collect all logs from service and servic
 
 1. Install the operator with its RBAC rules
 
-        kubectl apply -f https://download.elastic.co/downloads/eck/2.1.0/operator.yaml -n monitoring
-
-1. Monitor the operator logs
-
-        kubectl -n monitoring logs -f statefulset.apps/elastic-operator
+        kubectl apply -f .\kubernetes\elk\elk-operator.yml -n monitoring
 
 1. Install local elk cluster
 
@@ -382,21 +361,25 @@ We are using OpenTelemetry Collector to collect all logs from service and servic
 
    ![ELK Integrations](images/elk-apm-integrations-1.png)  
 
-1. Select Installed integrations and Elastic APM
+1. Select Browse integrations and click on Elastic APM
 
    ![ELK Integrations APM](images/elk-apm-integrations-2.png)
 
-1. Click on Add Elastic APM
+1. Click on Elastic APM in Fleet and click on APM Integration
    
    ![ELK Integrations APM](images/elk-apm-integrations-3.png)
 
+1. Click on Add Elastic APM
+   
+   ![ELK Integrations APM](images/elk-apm-integrations-4.png)
+
 1. Enter APM integration name and Click on save
 
-   ![ELK Integrations APM](images/elk-apm-integrations-4.png)
+   ![ELK Integrations APM](images/elk-apm-integrations-5.png)
 
 1. Plaprimes APM is in the list
 
-   ![ELK Integrations APM](images/elk-apm-integrations-5.png)
+   ![ELK Integrations APM](images/elk-apm-integrations-6.png)
 
 Next you need to configure [OpenTelemetry Collector](#opentelemetry-collector) to ship logs to ELK APM.
 
@@ -409,13 +392,11 @@ This could be ideally done using env vars but no time, hence it is a TODO.
 
         $rawPwd = kubectl get secret local-elk-apm-apm-token -o template='{{.data }}' -n monitoring
         $i = $rawPwd.LastIndexOf(":")+1
-        $l = $le =$rawPwd.Length-$li-1
-        $pwd = $rawPwd.Substring($li,$le)
+        $l = $le =$rawPwd.Length-$i-1
+        $pwd = $rawPwd.Substring($i,$l)
         [Text.Encoding]::Utf8.GetString([Convert]::FromBase64String($pwd))
 
 1. Edit ./kubernetes/otel-collector/open-telemetry-collector-generic.yaml file by adding token to otlp/elastic exporter.
-
-Now you can install collector.
 
 1.  Install collector
 
@@ -433,7 +414,7 @@ Trace logs in Zipkin. See [Accessing Zipkin](#access-zipkin)
 
 And metrics and logs in Kibana. See [Accessing Kibana](#access-kibana)
 
-![ELK Integrations APM](images/elk-apm-integrations-6.png)
+![ELK Integrations APM](images/elk-apm-integrations-7.png)
 
 And Dapr metrics in Grafana. See [Accessing Grafana](#access-grafana)
 

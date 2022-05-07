@@ -40,14 +40,14 @@ data:
           insecure: true
         headers:
           # Elastic APM Server secret token
-          Authorization: "Bearer 65CB5wjtTNG432R5F42eX8bY"
+          Authorization: "Bearer AYj014v4x211eJWCY9T2r1vW"
     service:
       extensions: [pprof, zpages, health_check]
       pipelines:
         traces:
           receivers: [zipkin]
           processors: [batch]
-          exporters: [otlp/elastic,logging]
+          exporters: [zipkin,otlp/elastic,logging]
         metrics:
           receivers: [otlp]
           processors: [batch]
