@@ -8,15 +8,20 @@
 
 1. Dockerize (DONE)
 1. Frontend app,
-   1. Blazor
-   1. SignalR (DONE)
-   1. Angular (DONE)
+        1. Blazor
+        1. SignalR (DONE)
+        1. Angular (DONE)
 1. Implementer algorithm's for Prime og Pal (DONE)
 1. Fix bug med Prime-api (DONE)
 1. Docker-Desktop Kubernetes (DONE) 1. Add SignalR back plane.
 1. Get open tracing to work with zipkin on Docker and Kubernetes 1. General info: https://docs.microsoft.com/en-us/dotnet/architecture/dapr-for-net-developers/observability 1. Example with Zipkin exporter: https://github.com/open-telemetry/opentelemetry-dotnet/tree/main/examples/AspNetCore (DONE)
 1. Competing consumers - skalering ("consumer.groups in redis") (DONE)
 1. Azure Kubernetes
+1. Get Opencollector Operator and Sidecar to work: 
+        1. https://github.com/open-telemetry/opentelemetry-operator
+        1. https://github.com/open-telemetry/opentelemetry-operator
+1. Get Open telemetry to work in .net
+        1. https://www.meziantou.net/monitoring-a-dotnet-application-using-opentelemetry.htm
 
 ## Run apps on Docker
 
@@ -440,6 +445,10 @@ Works well but needs more work to follow open telemetry standard.
         ...
         
 ## How to
+
+### Test Kafka on Kubernetes
+
+        kubectl -n palprimes exec -ti my-cluster-kafka-0 -- ./bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 --topic receivenumber --from-beginning
 
 ### Test Kafka on Docker
 
